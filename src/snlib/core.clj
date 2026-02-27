@@ -87,8 +87,12 @@
   [html]
   (let [body (or html "")]
     (boolean
-     (or (str/includes? body "memberLogin.do")
-         (str/includes? body "location.href='/intro/memberLogin.do'")))))
+     (or (str/includes? body "location.href='/intro/memberLogin.do'")
+         (str/includes? body "로그인 후 이용가능합니다")
+         (re-find #"(?is)<form[^>]+id=\"redirectForm\"[^>]*action=\"/intro/menu/10068/program/30025/memberLogin\.do\""
+                  body)
+         (re-find #"(?is)var\s+frm\s*=\s*document\.redirectForm.*?frm\.submit\(\)"
+                  body)))))
 
 (defn login!
   [client {:keys [user-id password return-url]}]
