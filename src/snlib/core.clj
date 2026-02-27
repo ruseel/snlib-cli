@@ -15,8 +15,11 @@
 (def ^:private login-submit-path "/intro/menu/10068/program/30025/memberLoginProc.do")
 (def ^:private loan-status-path "/intro/menu/10060/program/30019/mypage/loanStatusList.do")
 (def ^:private search-path "/intro/menu/10041/program/30009/plusSearchResultList.do")
+(def ^:private interloan-popup-path "/intro/doorae/bandLillApplyPop.do")
+(def ^:private interloan-submit-path "/intro/doorae/bandLillApplyPopProc.do")
 (def ^:private default-return-url
   "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
+(def ^:private interloan-success-token "상호대차 신청이 완료되었습니다.")
 
 (defn create-client
   "Create a client atom with cookie-store for session reuse."
@@ -281,3 +284,132 @@
         (error-envelope :remote-error
                         :http-request-failed
                         (.getMessage e))))))
+
+(defn- normalize-bool
+  [v]
+  (contains? #{"1" "true" "yes" "on"}
+             (some-> v str str/trim str/lower-case)))
+
+(defn- interloan-submit-allowed?
+  [{:keys [allow-submit?]}]
+  (let [write-ops-env (or (System/getenv "SNLIB_WRITE_OPS") "")]
+    (or (true? allow-submit?)
+        (normalize-bool (System/getenv "SNLIB_ALLOW_INTERLOAN_SUBMIT"))
+        (normalize-bool (System/getenv "SNLIB_ALLOW_WRITE_SUBMITS"))
+        (->> (str/split write-ops-env #",")
+             (map str/trim)
+             (remove str/blank?)
+             (some #{"interloan-submit"})
+             boolean))))
+
+(defn- missing-interloan-input
+  [{:keys [manage-code reg-no give-lib-code apl-lib-code user-key submit?]}]
+  (vec
+   (concat
+    (when (str/blank? (or manage-code "")) [:manage-code])
+    (when (str/blank? (or reg-no "")) [:reg-no])
+    (when submit?
+      (concat
+       (when (str/blank? (or give-lib-code "")) [:give-lib-code])
+       (when (str/blank? (or apl-lib-code "")) [:apl-lib-code])
+       (when (str/blank? (or user-key "")) [:user-key]))))))
+
+(defn- build-interloan-payload
+  [{:keys [manage-code reg-no give-lib-code apl-lib-code user-key appendix-apply-yn]}]
+  {"manageCode" (or manage-code "")
+   "regNo" (or reg-no "")
+   "giveLibCode" (or give-lib-code "")
+   "appendixApplyYn" (or appendix-apply-yn "N")
+   "aplLibCode" (or apl-lib-code "")
+   "userKey" (or user-key "")})
+
+(defn- parse-interloan-result-message
+  [html]
+  (let [body (or html "")
+        doc (when-not (str/blank? body) (Jsoup/parse body))
+        message-from-body (when doc
+                            (some-> (.select doc ".messageBox p") first .text str/trim not-empty))
+        message-from-alert (some->> (re-find #"(?is)alert\((?:'|\")(.+?)(?:'|\")\)" body)
+                                    second
+                                    str/trim
+                                    not-empty)]
+    (or message-from-body
+        message-from-alert
+        (when (str/includes? body interloan-success-token)
+          interloan-success-token))))
+
+(defn interlibrary-loan-request!
+  [client
+   {:keys [manage-code reg-no submit?]
+    :as opts}]
+  (let [missing (missing-interloan-input opts)]
+    (if (seq missing)
+      (error-envelope :invalid-input
+                      :missing-required-input
+                      (str "Missing required input: " (str/join ", " (map name missing))))
+      (try
+        (let [prepared-payload (build-interloan-payload opts)
+              popup-res (request client
+                                 {:method :get
+                                  :url interloan-popup-path
+                                  :query-params {"manageCode" manage-code
+                                                 "regNo" reg-no}
+                                  :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+              popup-logged-in? (and (= 200 (:status popup-res))
+                                    (not (logged-out-page? (:body popup-res))))
+              base-data {:prepared-payload prepared-payload
+                         :submit-attempted? (boolean submit?)
+                         :submit-blocked? false
+                         :result-message nil}]
+          (cond
+            (not popup-logged-in?)
+            {:ok? false
+             :status :requires-login
+             :data (assoc base-data
+                          :result-message "Login is required before submitting interloan requests.")
+             :error nil}
+
+            (not submit?)
+            {:ok? true
+             :status :ok
+             :data base-data
+             :error nil}
+
+            (not (interloan-submit-allowed? opts))
+            {:ok? false
+             :status :blocked
+             :data (assoc base-data
+                          :submit-blocked? true
+                          :result-message "Interloan submit is blocked by default.")
+             :error {:code :write-blocked
+                     :message "Set :allow-submit? true or env SNLIB_ALLOW_INTERLOAN_SUBMIT=1 to submit."}}
+
+            :else
+            (let [submit-res (request client
+                                      {:method :post
+                                       :url interloan-submit-path
+                                       :form-params prepared-payload
+                                       :headers {"Origin" (:base-url @client)
+                                                 "Referer" (str (absolute-url client interloan-popup-path)
+                                                                "?manageCode=" manage-code
+                                                                "&regNo=" reg-no)}})
+                  status-code (:status submit-res)
+                  result-message (parse-interloan-result-message (:body submit-res))
+                  success? (and (= 200 status-code)
+                                (str/includes? (or (:body submit-res) "") interloan-success-token))
+                  status (if success? :ok :submit-failed)]
+              {:ok? success?
+               :status status
+               :data (assoc base-data
+                            :result-message result-message)
+               :error (when-not success?
+                        {:code :interloan-submit-failed
+                         :message (str "Interloan submit failed with status " status-code)})})))
+        (catch Exception e
+          (error-envelope :remote-error
+                          :http-request-failed
+                          (.getMessage e)))))))
+
+(defn interloan-request!
+  [client opts]
+  (interlibrary-loan-request! client opts))

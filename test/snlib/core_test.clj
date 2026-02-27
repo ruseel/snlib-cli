@@ -1,5 +1,6 @@
 (ns snlib.core-test
   (:require
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [snlib.core :as core]))
 
@@ -148,5 +149,105 @@
                   :data nil
                   :error {:code :missing-required-input
                           :message "Missing required input: keyword"}}
+                 result))
+          (is (zero? (count @calls))))))))
+
+(deftest interlibrary-loan-request-uses-har-popup-contract
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
+                                                               :reg-no "BEM000133237"})]
+          (is (= {:ok? true
+                  :status :ok
+                  :data {:prepared-payload {"manageCode" "MB"
+                                            "regNo" "BEM000133237"
+                                            "giveLibCode" ""
+                                            "appendixApplyYn" "N"
+                                            "aplLibCode" ""
+                                            "userKey" ""}
+                         :submit-attempted? false
+                         :submit-blocked? false
+                         :result-message nil}
+                  :error nil}
+                 result))
+          (is (= 1 (count @calls)))
+          (is (= :get (:method (first @calls))))
+          (is (= "/intro/doorae/bandLillApplyPop.do"
+                 (:url (first @calls))))
+          (is (= "MB" (get-in (first @calls) [:query-params "manageCode"])))
+          (is (= "BEM000133237" (get-in (first @calls) [:query-params "regNo"]))))))))
+
+(deftest interlibrary-loan-request-blocks-submit-by-default
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
+                                                               :reg-no "BEM000133237"
+                                                               :give-lib-code "141052"
+                                                               :apl-lib-code "141484"
+                                                               :user-key "1060272451"
+                                                               :submit? true})]
+          (is (= false (:ok? result)))
+          (is (= :blocked (:status result)))
+          (is (= true (get-in result [:data :submit-attempted?])))
+          (is (= true (get-in result [:data :submit-blocked?])))
+          (is (= :write-blocked (get-in result [:error :code])))
+          (is (= 1 (count @calls)))
+          (is (= :get (:method (first @calls)))))))))
+
+(deftest interlibrary-loan-request-submit-uses-har-submit-contract-when-allowed
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}
+       {:status 200
+        :headers {"content-type" "text/html"}
+        :body "<html><head><title>상호대차 신청결과</title></head><body>상호대차 신청이 완료되었습니다.</body></html>"}]
+      (fn [calls]
+        (let [result (core/interloan-request! client {:manage-code "MB"
+                                                      :reg-no "BEM000133237"
+                                                      :give-lib-code "141052"
+                                                      :apl-lib-code "141484"
+                                                      :user-key "1060272451"
+                                                      :appendix-apply-yn "N"
+                                                      :submit? true
+                                                      :allow-submit? true})]
+          (is (= true (:ok? result)))
+          (is (= :ok (:status result)))
+          (is (= "상호대차 신청이 완료되었습니다."
+                 (get-in result [:data :result-message])))
+          (is (= 2 (count @calls)))
+          (is (= :post (:method (second @calls))))
+          (is (= "/intro/doorae/bandLillApplyPopProc.do"
+                 (:url (second @calls))))
+          (is (= {"manageCode" "MB"
+                  "regNo" "BEM000133237"
+                  "giveLibCode" "141052"
+                  "appendixApplyYn" "N"
+                  "aplLibCode" "141484"
+                  "userKey" "1060272451"}
+                 (:form-params (second @calls))))
+          (is (= "https://snlib.go.kr"
+                 (get-in (second @calls) [:headers "Origin"])))
+          (is (str/includes? (get-in (second @calls) [:headers "Referer"])
+                             "manageCode=MB"))
+          (is (str/includes? (get-in (second @calls) [:headers "Referer"])
+                             "regNo=BEM000133237")))))))
+
+(deftest interlibrary-loan-request-validates-submit-required-input-before-http
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html>unused</html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
+                                                               :reg-no "BEM000133237"
+                                                               :submit? true})]
+          (is (= {:ok? false
+                  :status :invalid-input
+                  :data nil
+                  :error {:code :missing-required-input
+                          :message "Missing required input: give-lib-code, apl-lib-code, user-key"}}
                  result))
           (is (zero? (count @calls))))))))
