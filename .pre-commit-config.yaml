@@ -1,0 +1,23 @@
+repos:
+  - repo: builtin
+    hooks:
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+
+  - repo: local
+    hooks:
+      - id: standard-clj
+        name: Standard Clojure Style
+        entry: standard-clj fix src test
+        language: system
+        types: [clojure]
+        pass_filenames: false
+
+      - id: kaocha
+        name: Kaocha Tests
+        entry: clj -M:test --fail-fast
+        language: system
+        pass_filenames: false
+        always_run: true
