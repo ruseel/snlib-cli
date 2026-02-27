@@ -2,7 +2,10 @@
   (:require
    [clj-http.client :as http]
    [clj-http.cookies :as cookies]
-   [clojure.string :as str]))
+   [clojure.string :as str])
+  (:import
+   (org.jsoup Jsoup)
+   (org.jsoup.nodes Element)))
 
 (def ^:private default-base-url "https://snlib.go.kr")
 (def ^:private default-timeout-ms 20000)
@@ -11,6 +14,7 @@
 (def ^:private login-page-path "/intro/memberLogin.do")
 (def ^:private login-submit-path "/intro/menu/10068/program/30025/memberLoginProc.do")
 (def ^:private loan-status-path "/intro/menu/10060/program/30019/mypage/loanStatusList.do")
+(def ^:private search-path "/intro/menu/10041/program/30009/plusSearchResultList.do")
 (def ^:private default-return-url
   "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
 
@@ -115,3 +119,165 @@
           (error-envelope :remote-error
                           :http-request-failed
                           (.getMessage e)))))))
+
+(defn- parse-int-safe
+  [v]
+  (try
+    (Integer/parseInt (str v))
+    (catch Exception _ nil)))
+
+(defn- normalize-library-codes
+  [library-code]
+  (->> (cond
+         (nil? library-code) []
+         (sequential? library-code) library-code
+         :else [library-code])
+       (map #(some-> % str str/trim))
+       (remove str/blank?)
+       vec))
+
+(defn- build-search-query
+  [{:keys [keyword library-code page per-page sort order]}]
+  (let [library-codes (normalize-library-codes library-code)
+        query {"searchType" "SIMPLE"
+               "searchMenuCollectionCategory" ""
+               "searchMenuEBookCategory" ""
+               "searchCategory" "BOOK"
+               "searchKey" "ALL"
+               "searchKey1" ""
+               "searchKey2" ""
+               "searchKey3" ""
+               "searchKey4" ""
+               "searchKey5" ""
+               "searchKeyword" keyword
+               "searchKeyword1" ""
+               "searchKeyword2" ""
+               "searchKeyword3" ""
+               "searchKeyword4" ""
+               "searchKeyword5" ""
+               "searchOperator1" ""
+               "searchOperator2" ""
+               "searchOperator3" ""
+               "searchOperator4" ""
+               "searchOperator5" ""
+               "searchPublishStartYear" ""
+               "searchPublishEndYear" ""
+               "searchRoom" ""
+               "searchKdc" ""
+               "searchIsbn" ""
+               "currentPageNo" (str (or page 1))
+               "viewStatus" "IMAGE"
+               "preSearchKey" "ALL"
+               "preSearchKeyword" keyword
+               "searchPbLibrary" "ALL"
+               "searchSort" (or sort "SIMILAR")
+               "searchOrder" (or order "DESC")
+               "searchRecordCount" (str (or per-page 10))
+               "searchBookClass" "ALL"}]
+    (cond-> query
+      (seq library-codes)
+      (assoc "searchLibraryArr" (if (= 1 (count library-codes))
+                                  (first library-codes)
+                                  library-codes)))))
+
+(defn- split-colon-value
+  [s]
+  (let [parts (str/split (or s "") #":" 2)]
+    (when (= 2 (count parts))
+      (some-> (second parts)
+              (str/replace #",+$" "")
+              str/trim
+              not-empty))))
+
+(defn- parse-author-meta
+  [^Element item]
+  (reduce
+   (fn [acc ^Element span]
+     (let [text (str/trim (.text span))
+           value (split-colon-value text)]
+       (cond
+         (and value (str/starts-with? text "저자")) (assoc acc :author value)
+         (and value (str/starts-with? text "발행자")) (assoc acc :publisher value)
+         (and value (str/starts-with? text "발행연도")) (assoc acc :publish-year value)
+         :else acc)))
+   {:author nil
+    :publisher nil
+    :publish-year nil}
+   (.select item "dd.author span")))
+
+(defn- parse-manage-and-reg-no
+  [^Element item]
+  (let [onclick (->> (.select item "a[onclick]")
+                     (map #(.attr ^Element % "onclick"))
+                     (some #(when (str/includes? % "fnBandLillApplyPop")
+                              %)))]
+    (if-let [[_ manage-code reg-no]
+             (and onclick
+                  (re-find #"fnBandLillApplyPop\('([^']+)'\s*,\s*'([^']+)'\)"
+                           onclick))]
+      {:manage-code manage-code
+       :reg-no reg-no}
+      {:manage-code nil
+       :reg-no nil})))
+
+(defn- parse-search-items
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc "ul.resultList.imageType > li")
+           (map (fn [^Element item]
+                  (let [title (some-> (.select item "dt.tit a") first .text str/trim not-empty)
+                        {:keys [author publisher publish-year]} (parse-author-meta item)
+                        {:keys [manage-code reg-no]} (parse-manage-and-reg-no item)]
+                    {:title (or title "")
+                     :author (or author "")
+                     :publisher (or publisher "")
+                     :publish-year (or publish-year "")
+                     :manage-code (or manage-code "")
+                     :reg-no (or reg-no "")})))
+           vec))))
+
+(defn- parse-total-count
+  [html]
+  (if (str/blank? html)
+    nil
+    (let [doc (Jsoup/parse html)
+          total-text (or (some-> (.select doc "p.rtitle strong.themeFC") first .text)
+                         (some-> (.select doc ".resultListWrap .themeFC") first .text))
+          digits (some-> total-text
+                         (str/replace #"[^\d]" "")
+                         not-empty)]
+      (some-> digits parse-int-safe))))
+
+(defn search-books!
+  [client {:keys [keyword] :as opts}]
+  (if (str/blank? (or keyword ""))
+    (error-envelope :invalid-input
+                    :missing-required-input
+                    "Missing required input: keyword")
+    (try
+      (let [query-params (build-search-query opts)
+            res (request client {:method :get
+                                 :url search-path
+                                 :query-params query-params
+                                 :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+            status-code (:status res)]
+        (if (= 200 status-code)
+          (let [items (parse-search-items (:body res))
+                page (or (parse-int-safe (get query-params "currentPageNo")) 1)
+                total-count (or (parse-total-count (:body res))
+                                (count items))]
+            {:ok? true
+             :status :ok
+             :data {:items items
+                    :page page
+                    :total-count total-count}
+             :error nil})
+          (error-envelope :remote-error
+                          :search-request-failed
+                          (str "Search request failed with status " status-code))))
+      (catch Exception e
+        (error-envelope :remote-error
+                        :http-request-failed
+                        (.getMessage e))))))
