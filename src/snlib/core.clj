@@ -26,14 +26,15 @@
 (defn create-client
   "Create a client atom with cookie-store for session reuse."
   ([] (create-client {}))
-  ([{:keys [base-url timeout-ms user-agent]
+  ([{:keys [base-url timeout-ms user-agent cookie-store]
      :or {base-url default-base-url
           timeout-ms default-timeout-ms
-          user-agent default-user-agent}}]
+          user-agent default-user-agent
+          cookie-store (cookies/cookie-store)}}]
    (atom {:base-url base-url
           :timeout-ms timeout-ms
           :user-agent user-agent
-          :cookie-store (cookies/cookie-store)
+          :cookie-store cookie-store
           :last-login nil})))
 
 (defn authenticated?
