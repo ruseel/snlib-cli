@@ -152,6 +152,28 @@
                  result))
           (is (zero? (count @calls))))))))
 
+(deftest search-books-parses-interloan-params-when-link-is-not-first-onclick
+  (let [client (core/create-client)
+        html (str
+              "<ul class='resultList imageType'>"
+              "<li>"
+              "<dt class='tit'><a>혼모노</a></dt>"
+              "<dd class='author'><span>저자 : 성해나 지음</span></dd>"
+              "<div class='stateArea'>"
+              "<a href='#btn' onclick=\"javascript:fnSearchResultDetail(1,2,'BO'); return false;\">상세</a>"
+              "<a href='#btn' onclick=\"javascript:fnBandLillApplyPop('MA','CEM000903366'); return false;\">상호대차신청</a>"
+              "</div>"
+              "</li>"
+              "</ul>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [_calls]
+        (let [result (core/search-books! client {:keyword "혼모노"})]
+          (is (= "MA"
+                 (get-in result [:data :items 0 :manage-code])))
+          (is (= "CEM000903366"
+                 (get-in result [:data :items 0 :reg-no]))))))))
+
 (deftest loan-status-uses-har-request-contract-and-parses-active-loans
   (let [client (core/create-client)
         html (str
@@ -248,13 +270,17 @@
 (deftest interlibrary-loan-request-blocks-submit-by-default
   (let [client (core/create-client)]
     (with-request-stub
-      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
+      [{:status 200
+        :headers {"content-type" "text/html"}
+        :body (str
+               "<html><body>"
+               "<input type='hidden' name='giveLibCode' value='141052'/>"
+               "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+               "</body></html>")}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
                                                                :reg-no "BEM000133237"
-                                                               :give-lib-code "141052"
                                                                :apl-lib-code "141484"
-                                                               :user-key "1060272451"
                                                                :submit? true})]
           (is (= false (:ok? result)))
           (is (= :blocked (:status result)))
@@ -267,16 +293,20 @@
 (deftest interlibrary-loan-request-submit-uses-har-submit-contract-when-allowed
   (let [client (core/create-client)]
     (with-request-stub
-      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}
+      [{:status 200
+        :headers {"content-type" "text/html"}
+        :body (str
+               "<html><body>"
+               "<input type='hidden' name='giveLibCode' value='141052'/>"
+               "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+               "</body></html>")}
        {:status 200
         :headers {"content-type" "text/html"}
         :body "<html><head><title>상호대차 신청결과</title></head><body>상호대차 신청이 완료되었습니다.</body></html>"}]
       (fn [calls]
         (let [result (core/interloan-request! client {:manage-code "MB"
                                                       :reg-no "BEM000133237"
-                                                      :give-lib-code "141052"
                                                       :apl-lib-code "141484"
-                                                      :user-key "1060272451"
                                                       :appendix-apply-yn "N"
                                                       :submit? true
                                                       :allow-submit? true})]
@@ -314,9 +344,27 @@
                   :status :invalid-input
                   :data nil
                   :error {:code :missing-required-input
-                          :message "Missing required input: give-lib-code, apl-lib-code, user-key"}}
+                          :message "Missing required input: apl-lib-code"}}
                  result))
           (is (zero? (count @calls))))))))
+
+(deftest interlibrary-loan-request-fails-when-popup-misses-derived-submit-values
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
+                                                               :reg-no "BEM000133237"
+                                                               :apl-lib-code "141484"
+                                                               :submit? true})]
+          (is (= {:ok? false
+                  :status :invalid-input
+                  :data nil
+                  :error {:code :missing-required-input
+                          :message "Missing required input: give-lib-code, user-key"}}
+                 result))
+          (is (= 1 (count @calls)))
+          (is (= :get (:method (first @calls)))))))))
 
 (deftest hope-book-request-prepares-payload-from-page-form
   (let [client (core/create-client)

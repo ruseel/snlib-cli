@@ -216,18 +216,16 @@
 
 (defn- parse-manage-and-reg-no
   [^Element item]
-  (let [onclick (->> (.select item "a[onclick]")
-                     (map #(.attr ^Element % "onclick"))
-                     (some #(when (str/includes? % "fnBandLillApplyPop")
-                              %)))]
-    (if-let [[_ manage-code reg-no]
-             (and onclick
-                  (re-find #"fnBandLillApplyPop\('([^']+)'\s*,\s*'([^']+)'\)"
-                           onclick))]
-      {:manage-code manage-code
-       :reg-no reg-no}
+  (or (->> (.select item "a[onclick]")
+           (map #(.attr ^Element % "onclick"))
+           (some (fn [onclick]
+                   (when-let [[_ manage-code reg-no]
+                              (re-find #"fnBandLillApplyPop\('([^']+)'\s*,\s*'([^']+)'\)"
+                                       onclick)]
+                     {:manage-code manage-code
+                      :reg-no reg-no}))))
       {:manage-code nil
-       :reg-no nil})))
+       :reg-no nil}))
 
 (defn- parse-search-items
   [html]
@@ -681,16 +679,44 @@
              boolean))))
 
 (defn- missing-interloan-input
-  [{:keys [manage-code reg-no give-lib-code apl-lib-code user-key submit?]}]
+  [{:keys [manage-code reg-no apl-lib-code submit?]}]
   (vec
    (concat
     (when (str/blank? (or manage-code "")) [:manage-code])
     (when (str/blank? (or reg-no "")) [:reg-no])
     (when submit?
-      (concat
-       (when (str/blank? (or give-lib-code "")) [:give-lib-code])
-       (when (str/blank? (or apl-lib-code "")) [:apl-lib-code])
-       (when (str/blank? (or user-key "")) [:user-key]))))))
+      (when (str/blank? (or apl-lib-code ""))
+        [:apl-lib-code])))))
+
+(defn- missing-interloan-popup-values
+  [{:keys [give-lib-code user-key]}]
+  (vec
+   (concat
+    (when (str/blank? (or give-lib-code "")) [:give-lib-code])
+    (when (str/blank? (or user-key "")) [:user-key]))))
+
+(defn- parse-select-value
+  [doc field-name]
+  (let [selected-selector (str "select[name='" field-name "'] option[selected]")
+        option-selector (str "select[name='" field-name "'] option")]
+    (or (some-> (.select doc selected-selector) first (.attr "value") normalize-text)
+        (some-> (.select doc option-selector) first (.attr "value") normalize-text))))
+
+(defn- parse-hidden-input-value
+  [doc field-name]
+  (some-> (.select doc (str "input[name='" field-name "']"))
+          first
+          (.attr "value")
+          normalize-text))
+
+(defn- parse-interloan-popup-values
+  [html]
+  (if (str/blank? html)
+    {}
+    (let [doc (Jsoup/parse html)]
+      {:give-lib-code (parse-hidden-input-value doc "giveLibCode")
+       :user-key (or (parse-hidden-input-value doc "userKey")
+                     (parse-select-value doc "userKey"))})))
 
 (defn- build-interloan-payload
   [{:keys [manage-code reg-no give-lib-code apl-lib-code user-key appendix-apply-yn]}]
@@ -717,6 +743,13 @@
           interloan-success-token))))
 
 (defn interlibrary-loan-request!
+  "Request interlibrary loan.
+
+  Required options:
+  - :manage-code and :reg-no (from search/detail interloan target)
+  - :apl-lib-code when :submit? is true.
+
+  :apl-lib-code values can be looked up from data/lib-code.edn."
   [client
    {:keys [manage-code reg-no submit?]
     :as opts}]
@@ -726,13 +759,14 @@
                       :missing-required-input
                       (str "Missing required input: " (str/join ", " (map name missing))))
       (try
-        (let [prepared-payload (build-interloan-payload opts)
-              popup-res (request client
+        (let [popup-res (request client
                                  {:method :get
                                   :url interloan-popup-path
                                   :query-params {"manageCode" manage-code
                                                  "regNo" reg-no}
                                   :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+              merged-opts (merge (parse-interloan-popup-values (:body popup-res)) opts)
+              prepared-payload (build-interloan-payload merged-opts)
               popup-logged-in? (and (= 200 (:status popup-res))
                                     (not (logged-out-page? (:body popup-res))))
               base-data {:prepared-payload prepared-payload
@@ -752,6 +786,13 @@
              :status :ok
              :data base-data
              :error nil}
+
+            (seq (missing-interloan-popup-values merged-opts))
+            (error-envelope :invalid-input
+                            :missing-required-input
+                            (str "Missing required input: "
+                                 (str/join ", "
+                                           (map name (missing-interloan-popup-values merged-opts)))))
 
             (not (interloan-submit-allowed? opts))
             {:ok? false
