@@ -150,10 +150,10 @@
    [nil "--allow-submit" "Allow write submit from CLI"]
    [nil "--page-path PATH" "Override hope-book page path"]
    [nil "--submit-path PATH" "Override submit path"]
-   [nil "--manage-code CODE" "Interloan manage code"]
+   [nil "--manage-code CODE" "Interloan manage code (usually 2-letter uppercase, ex: MA)"]
    [nil "--reg-no REG_NO" "Interloan registration number"]
-   [nil "--apl-lib-code CODE" "Applicant library code"]
-   [nil "--give-lib-code CODE" "Giving library code"]
+   [nil "--apl-lib-code CODE" "Applicant library code (6-digit numeric, see data/lib-code.edn)"]
+   [nil "--give-lib-code CODE" "Giving library code (6-digit numeric, usually auto-filled from popup)"]
    [nil "--user-key USER_KEY" "Interloan user key"]
    [nil "--appendix-apply-yn YN" "Interloan appendix apply flag"]
    [nil "--book-info KEY=VALUE" "Hope-book book field (repeatable)"
@@ -192,7 +192,7 @@
        "  snlib login --user-id myid --password secret\n"
        "  snlib search-books --keyword franklin --library-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
-       "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code MB\n"
+       "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code 141484\n"
        "  snlib my-info\n"
        "  snlib hope-book-detail --rec-key 1938103961\n"
        "  snlib basket-list --group-key 13840"))

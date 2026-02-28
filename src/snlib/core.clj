@@ -759,7 +759,11 @@
   - :manage-code and :reg-no (from search/detail interloan target)
   - :apl-lib-code when :submit? is true.
 
-  :apl-lib-code values can be looked up from data/lib-code.edn."
+  Code guide:
+  - :manage-code is usually a 2-letter uppercase code (ex: \"MA\", \"MB\", \"MS\").
+  - :apl-lib-code and :give-lib-code are 6-digit numeric library codes.
+  - :apl-lib-code values can be looked up from data/lib-code.edn.
+  - :give-lib-code and :user-key are normally derived from the popup response."
   [client
    {:keys [manage-code reg-no submit?]
     :as opts}]
@@ -840,6 +844,9 @@
                           (.getMessage e)))))))
 
 (defn interloan-request!
+  "Alias of interlibrary-loan-request!.
+
+  See interlibrary-loan-request! for required options and code format details."
   [client opts]
   (interlibrary-loan-request! client opts))
 
