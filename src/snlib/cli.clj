@@ -15,6 +15,9 @@
 (def ^:private session-file-path
   (str (System/getProperty "user.home") "/.config/snlib-cli/session.edn"))
 
+(def ^:private credentials-file-path
+  (str (System/getProperty "user.home") "/.config/snlib-cli/credentials.edn"))
+
 (defn- cookie->data
   [cookie]
   {:name (.getName cookie)
@@ -66,6 +69,30 @@
     (when parent-dir
       (.mkdirs parent-dir))
     (spit session-file (pr-str payload))))
+
+(defn- load-credentials
+  []
+  (let [credentials-file (io/file credentials-file-path)]
+    (if-not (.exists credentials-file)
+      {}
+      (try
+        (let [data (edn/read-string (slurp credentials-file))]
+          (if (map? data)
+            data
+            {}))
+        (catch Exception _
+          {})))))
+
+(defn- save-credentials!
+  [{:keys [user-id password]}]
+  (let [credentials-file (io/file credentials-file-path)
+        parent-dir (.getParentFile credentials-file)
+        payload {:user-id user-id
+                 :password password
+                 :saved-at-ms (System/currentTimeMillis)}]
+    (when parent-dir
+      (.mkdirs parent-dir))
+    (spit credentials-file (pr-str payload))))
 
 (def ^:private commands
   {"login" core/login!
@@ -155,7 +182,10 @@
   [command opts]
   (case command
     "login"
-    (select-keys opts [:user-id :password :return-url])
+    (let [stored (load-credentials)]
+      {:user-id (or (:user-id opts) (:user-id stored))
+       :password (or (:password opts) (:password stored))
+       :return-url (:return-url opts)})
 
     "search-books"
     (select-keys opts [:keyword :library-code :page :per-page :sort :order])
@@ -218,7 +248,13 @@
             client (core/create-client (assoc (select-keys options [:base-url :timeout-ms :user-agent])
                                               :cookie-store cookie-store))]
         (try
-          (let [result ((get commands command) client (command-opts command options))]
+          (let [resolved-opts (command-opts command options)
+                result ((get commands command) client resolved-opts)]
+            (when (and (= command "login")
+                       (:ok? result)
+                       (not (str/blank? (or (:user-id resolved-opts) "")))
+                       (not (str/blank? (or (:password resolved-opts) ""))))
+              (save-credentials! resolved-opts))
             {:exit-code (if (:ok? result) 0 2)
              :result result
              :pretty? (:pretty options)})
