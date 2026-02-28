@@ -213,17 +213,21 @@
     (select-keys opts [:include-history?])
 
     "hope-book-request"
-    (-> (select-keys opts [:submit? :allow-submit? :page-path :submit-path])
-        (assoc :book-info (into {} (:book-info opts))
+    (-> (select-keys opts [:page-path :submit-path])
+        (assoc :submit? (boolean (:submit opts))
+               :allow-submit? (boolean (:allow-submit opts))
+               :book-info (into {} (:book-info opts))
                :applicant-info (into {} (:applicant-info opts))))
 
     "interlibrary-loan-request"
-    (select-keys opts [:manage-code :reg-no :submit? :allow-submit?
-                       :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+    (-> (select-keys opts [:manage-code :reg-no :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+        (assoc :submit? (boolean (:submit opts))
+               :allow-submit? (boolean (:allow-submit opts))))
 
     "interloan-request"
-    (select-keys opts [:manage-code :reg-no :submit? :allow-submit?
-                       :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+    (-> (select-keys opts [:manage-code :reg-no :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+        (assoc :submit? (boolean (:submit opts))
+               :allow-submit? (boolean (:allow-submit opts))))
 
     "my-info" {}
 
