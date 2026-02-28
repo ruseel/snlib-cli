@@ -100,7 +100,14 @@
    "loan-status" core/loan-status!
    "hope-book-request" core/hope-book-request!
    "interlibrary-loan-request" core/interlibrary-loan-request!
-   "interloan-request" core/interloan-request!})
+   "interloan-request" core/interloan-request!
+   "my-info" core/my-info!
+   "loan-history" core/loan-history!
+   "reservation-status" core/reservation-status!
+   "interloan-status" core/interloan-status!
+   "hope-book-list" core/hope-book-list!
+   "hope-book-detail" core/hope-book-detail!
+   "basket-list" core/basket-list!})
 
 (defn- parse-int
   [label s]
@@ -155,6 +162,8 @@
    [nil "--applicant-info KEY=VALUE" "Hope-book applicant field (repeatable)"
     :parse-fn #(parse-kv "--applicant-info" %)
     :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
+   [nil "--rec-key KEY" "Hope-book detail rec-key"]
+   [nil "--group-key KEY" "Basket group key"]
    [nil "--pretty" "Pretty-print EDN output"]
    [nil "--help" "Show help"]])
 
@@ -169,14 +178,24 @@
        "  loan-status\n"
        "  hope-book-request\n"
        "  interlibrary-loan-request\n"
-       "  interloan-request\n\n"
+       "  interloan-request\n"
+       "  my-info\n"
+       "  loan-history\n"
+       "  reservation-status\n"
+       "  interloan-status\n"
+       "  hope-book-list\n"
+       "  hope-book-detail\n"
+       "  basket-list\n\n"
        "Long options:\n"
        summary "\n\n"
        "Examples:\n"
        "  snlib login --user-id myid --password secret\n"
        "  snlib search-books --keyword franklin --library-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
-       "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code MB"))
+       "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code MB\n"
+       "  snlib my-info\n"
+       "  snlib hope-book-detail --rec-key 1938103961\n"
+       "  snlib basket-list --group-key 13840"))
 
 (defn- command-opts
   [command opts]
@@ -205,6 +224,22 @@
     "interloan-request"
     (select-keys opts [:manage-code :reg-no :submit? :allow-submit?
                        :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+
+    "my-info" {}
+
+    "loan-history" {}
+
+    "reservation-status" {}
+
+    "interloan-status" {}
+
+    "hope-book-list" {}
+
+    "hope-book-detail"
+    (select-keys opts [:rec-key])
+
+    "basket-list"
+    (select-keys opts [:group-key])
 
     {}))
 

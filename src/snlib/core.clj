@@ -23,6 +23,15 @@
   "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
 (def ^:private interloan-success-token "상호대차 신청이 완료되었습니다.")
 
+(def ^:private my-info-path "/intro/menu/10055/program/30017/mypage/myInfo.do")
+(def ^:private reservation-status-path "/intro/menu/10061/program/30020/mypage/reservationStatusList.do")
+(def ^:private loan-history-path "/intro/menu/10062/program/30021/mypage/loanHistoryList.do")
+(def ^:private interloan-status-path "/intro/bandLillStatusList.do")
+(def ^:private hope-book-list-path "/intro/menu/10065/program/30011/mypage/hopeBookList.do")
+(def ^:private hope-book-detail-path "/intro/menu/10065/program/30011/mypage/hopeBookDetail.do")
+(def ^:private basket-group-main-path "/intro/menu/10057/program/30018/mypage/basketGroupMain.do")
+(def ^:private basket-group-book-list-path "/intro/menu/10057/program/30018/mypage/basketGroupBookList.do")
+
 (defn create-client
   "Create a client atom with cookie-store for session reuse."
   ([] (create-client {}))
@@ -833,3 +842,497 @@
 (defn interloan-request!
   [client opts]
   (interlibrary-loan-request! client opts))
+
+;; ---------------------------------------------------------------------------
+;; my-info
+;; ---------------------------------------------------------------------------
+
+(def ^:private my-info-label-key
+  {"아이디" :user-id
+   "회원번호" :member-no
+   "회원가입일" :join-date
+   "개인정보동의 만료일" :privacy-expiry-date
+   "휴대폰번호" :phone
+   "이메일주소" :email})
+
+(defn- parse-my-info
+  [html]
+  (if (str/blank? html)
+    {}
+    (let [doc (Jsoup/parse html)
+          member-type (some-> (.select doc ".myInfo .memType strong") first .text normalize-text)
+          items (->> (.select doc ".myInfo .dot-list li")
+                     (reduce
+                      (fn [acc ^Element li]
+                        (let [text (.text li)
+                              [label value] (str/split text #"\s*:\s*" 2)
+                              label' (some-> label str/trim)
+                              value' (some-> value str/trim)]
+                          (if-let [k (get my-info-label-key label')]
+                            (assoc acc k value')
+                            acc)))
+                      {}))]
+      (cond-> items
+        member-type (assoc :member-type member-type)))))
+
+(defn my-info!
+  [client _opts]
+  (try
+    (let [res (request client
+                       {:method :get
+                        :url my-info-path
+                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          status-code (:status res)
+          html (:body res)]
+      (cond
+        (and (= 200 status-code)
+             (logged-out-page? html))
+        {:ok? false
+         :status :requires-login
+         :data {}
+         :error nil}
+
+        (= 200 status-code)
+        {:ok? true
+         :status :ok
+         :data (parse-my-info html)
+         :error nil}
+
+        :else
+        (error-envelope :remote-error
+                        :my-info-request-failed
+                        (str "My info request failed with status " status-code))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
+
+;; ---------------------------------------------------------------------------
+;; article-list parser (shared by loan-history, interloan-status, etc.)
+;; ---------------------------------------------------------------------------
+
+(defn- extract-info-spans
+  [^Element li]
+  (->> (.select li "p.info span")
+       (map #(.text ^Element %))
+       (map normalize-text)
+       (remove nil?)
+       vec))
+
+(defn- span-value
+  [spans pattern]
+  (some (fn [s]
+          (when-let [[_ v] (re-find pattern s)]
+            (str/trim v)))
+        spans))
+
+(defn- parse-article-list-count
+  [html]
+  (when-not (str/blank? html)
+    (let [doc (Jsoup/parse html)]
+      (some-> (.select doc ".boardFilter .count .themeFC")
+              first
+              .text
+              (str/replace #"[^\d]" "")
+              not-empty
+              parse-int-safe))))
+
+;; ---------------------------------------------------------------------------
+;; loan-history
+;; ---------------------------------------------------------------------------
+
+(defn- parse-loan-history-items
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".article-list > li")
+           (remove #(some-> (.select ^Element % ".emptyNote") first))
+           (map (fn [^Element li]
+                  (let [title (some-> (.select li "p.title a") first .text normalize-text)
+                        spans (extract-info-spans li)]
+                    {:title (or title "")
+                     :reg-no (or (span-value spans #"등록번호\s*:\s*(.+)") "")
+                     :call-no (or (span-value spans #"청구기호\s*:\s*(.+)") "")
+                     :library (or (span-value spans #"소장도서관\s*:\s*(.+)") "")
+                     :room (or (span-value spans #"자료실\s*:\s*(.+)") "")
+                     :return-status (or (span-value spans #"상태\s*:\s*(.+)") "")
+                     :loan-date (or (span-value spans #"대출일\s*:\s*(.+)") "")
+                     :return-date (or (span-value spans #"반납일\s*:\s*(.+)") "")})))
+           vec))))
+
+(defn loan-history!
+  [client _opts]
+  (try
+    (let [res (request client
+                       {:method :get
+                        :url loan-history-path
+                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          status-code (:status res)
+          html (:body res)]
+      (cond
+        (and (= 200 status-code)
+             (logged-out-page? html))
+        {:ok? false
+         :status :requires-login
+         :data {:loans [] :count 0}
+         :error nil}
+
+        (= 200 status-code)
+        (let [items (parse-loan-history-items html)
+              total (or (parse-article-list-count html) (count items))]
+          {:ok? true
+           :status :ok
+           :data {:loans items :count total}
+           :error nil})
+
+        :else
+        (error-envelope :remote-error
+                        :loan-history-request-failed
+                        (str "Loan history request failed with status " status-code))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
+
+;; ---------------------------------------------------------------------------
+;; reservation-status
+;; ---------------------------------------------------------------------------
+
+(defn- parse-reservation-items
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".article-list > li")
+           (remove #(some-> (.select ^Element % ".emptyNote") first))
+           (map (fn [^Element li]
+                  (let [title (some-> (.select li "p.title a") first .text normalize-text)
+                        title' (or title
+                                   (some-> (.select li "p.title") first .text normalize-text))
+                        spans (extract-info-spans li)]
+                    {:title (or title' "")
+                     :reg-no (or (span-value spans #"등록번호\s*:\s*(.+)") "")
+                     :reservation-date (or (span-value spans #"예약일\s*:\s*(.+)") "")
+                     :reservation-expiry (or (span-value spans #"예약만기일\s*:\s*(.+)") "")
+                     :status (or (span-value spans #"상태\s*:\s*(.+)") "")
+                     :library (or (span-value spans #"도서관\s*:\s*(.+)") "")})))
+           vec))))
+
+(defn reservation-status!
+  [client _opts]
+  (try
+    (let [res (request client
+                       {:method :get
+                        :url reservation-status-path
+                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          status-code (:status res)
+          html (:body res)]
+      (cond
+        (and (= 200 status-code)
+             (logged-out-page? html))
+        {:ok? false
+         :status :requires-login
+         :data {:reservations [] :count 0}
+         :error nil}
+
+        (= 200 status-code)
+        (let [items (parse-reservation-items html)
+              total (or (parse-article-list-count html) (count items))]
+          {:ok? true
+           :status :ok
+           :data {:reservations items :count total}
+           :error nil})
+
+        :else
+        (error-envelope :remote-error
+                        :reservation-status-request-failed
+                        (str "Reservation status request failed with status " status-code))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
+
+;; ---------------------------------------------------------------------------
+;; interloan-status
+;; ---------------------------------------------------------------------------
+
+(defn- parse-interloan-status-items
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".article-list > li")
+           (remove #(some-> (.select ^Element % ".emptyNote") first))
+           (map (fn [^Element li]
+                  (let [title (some-> (.select li "p.title") first .text normalize-text)
+                        spans (extract-info-spans li)
+                        cancel-key (some-> (.select li "a[onclick*=fnDooraeCancelProc]")
+                                           first
+                                           (.attr "onclick")
+                                           (->> (re-find #"fnDooraeCancelProc\('(\d+)'\)"))
+                                           second)]
+                    {:title (or title "")
+                     :reg-no (or (span-value spans #"등록번호\s*:\s*(.+)") "")
+                     :call-no (or (span-value spans #"청구기호\s*:\s*(.+)") "")
+                     :give-library (or (span-value spans #"제공도서관\s*:\s*(.+)") "")
+                     :apl-library (or (span-value spans #"수령도서관\s*:\s*(.+)") "")
+                     :status (or (span-value spans #"상태\s*:\s*(.+)") "")
+                     :apply-date (or (span-value spans #"신청일\s*:\s*(.+)") "")
+                     :applicant (or (span-value spans #"신청자\s*:\s*(.+)") "")
+                     :cancel-key (or cancel-key "")})))
+           vec))))
+
+(defn interloan-status!
+  [client _opts]
+  (try
+    (let [res (request client
+                       {:method :get
+                        :url interloan-status-path
+                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          status-code (:status res)
+          html (:body res)]
+      (cond
+        (and (= 200 status-code)
+             (logged-out-page? html))
+        {:ok? false
+         :status :requires-login
+         :data {:requests [] :count 0}
+         :error nil}
+
+        (= 200 status-code)
+        (let [items (parse-interloan-status-items html)
+              total (or (parse-article-list-count html) (count items))]
+          {:ok? true
+           :status :ok
+           :data {:requests items :count total}
+           :error nil})
+
+        :else
+        (error-envelope :remote-error
+                        :interloan-status-request-failed
+                        (str "Interloan status request failed with status " status-code))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
+
+;; ---------------------------------------------------------------------------
+;; hope-book-list / hope-book-detail
+;; ---------------------------------------------------------------------------
+
+(defn- parse-hope-book-list-items
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".article-list > li")
+           (remove #(some-> (.select ^Element % ".emptyNote") first))
+           (map (fn [^Element li]
+                  (let [title-el (first (.select li "p.title a"))
+                        title (some-> title-el .text normalize-text)
+                        rec-key (some-> title-el
+                                        (.attr "onclick")
+                                        (->> (re-find #"hopeBookDetail\((\d+)\)"))
+                                        second)
+                        spans (extract-info-spans li)]
+                    {:title (or title "")
+                     :library (or (span-value spans #"도서관\s*:\s*(.+)") "")
+                     :apply-date (or (span-value spans #"신청일\s*:\s*(.+)") "")
+                     :status (or (span-value spans #"상태\s*:\s*(.+)") "")
+                     :rec-key (or rec-key "")})))
+           vec))))
+
+(defn hope-book-list!
+  [client _opts]
+  (try
+    (let [res (request client
+                       {:method :get
+                        :url hope-book-list-path
+                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          status-code (:status res)
+          html (:body res)]
+      (cond
+        (and (= 200 status-code)
+             (logged-out-page? html))
+        {:ok? false
+         :status :requires-login
+         :data {:items [] :count 0}
+         :error nil}
+
+        (= 200 status-code)
+        (let [items (parse-hope-book-list-items html)
+              total (or (parse-article-list-count html) (count items))]
+          {:ok? true
+           :status :ok
+           :data {:items items :count total}
+           :error nil})
+
+        :else
+        (error-envelope :remote-error
+                        :hope-book-list-request-failed
+                        (str "Hope book list request failed with status " status-code))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
+
+(def ^:private hope-book-detail-label-key
+  {"신청자" :applicant
+   "연락처" :phone
+   "이메일" :email
+   "신청도서관" :library
+   "희망도서명" :title
+   "저자" :author
+   "출판사" :publisher
+   "출판연도" :publish-year
+   "ISBN" :isbn
+   "가격" :price
+   "신청일" :apply-date
+   "신청상태" :status
+   "신청사유" :opinion})
+
+(defn- parse-hope-book-detail
+  [html]
+  (if (str/blank? html)
+    {}
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".board-view tr")
+           (reduce
+            (fn [acc ^Element tr]
+              (let [th (some-> (.select tr "th") first .text normalize-text)
+                    td (some-> (.select tr "td") first .text normalize-text)]
+                (if-let [k (get hope-book-detail-label-key th)]
+                  (assoc acc k (or td ""))
+                  acc)))
+            {})))))
+
+(defn hope-book-detail!
+  [client {:keys [rec-key]}]
+  (if (str/blank? (or rec-key ""))
+    (error-envelope :invalid-input
+                    :missing-required-input
+                    "Missing required input: rec-key")
+    (try
+      (let [res (request client
+                         {:method :get
+                          :url hope-book-detail-path
+                          :query-params {"recKey" rec-key}
+                          :headers {"Referer" (absolute-url client hope-book-list-path)}})
+            status-code (:status res)
+            html (:body res)]
+        (cond
+          (and (= 200 status-code)
+               (logged-out-page? html))
+          {:ok? false
+           :status :requires-login
+           :data {}
+           :error nil}
+
+          (= 200 status-code)
+          {:ok? true
+           :status :ok
+           :data (parse-hope-book-detail html)
+           :error nil}
+
+          :else
+          (error-envelope :remote-error
+                          :hope-book-detail-request-failed
+                          (str "Hope book detail request failed with status " status-code))))
+      (catch Exception e
+        (error-envelope :remote-error
+                        :http-request-failed
+                        (.getMessage e))))))
+
+;; ---------------------------------------------------------------------------
+;; basket-list
+;; ---------------------------------------------------------------------------
+
+(defn- parse-basket-group-key
+  [html]
+  (when-not (str/blank? html)
+    (some->> (re-find #"fnBasketGroupBookMore\((\d+)\)" html)
+             second)))
+
+(defn- parse-basket-group-info
+  [html]
+  (when-not (str/blank? html)
+    (let [doc (Jsoup/parse html)]
+      {:group-name (some-> (.select doc ".htitle") first .ownText normalize-text)
+       :book-count (some-> (.select doc ".htitle .normal")
+                           first .text
+                           (str/replace #"[^\d]" "")
+                           not-empty
+                           parse-int-safe)})))
+
+(defn- parse-basket-books
+  [html]
+  (if (str/blank? html)
+    []
+    (let [doc (Jsoup/parse html)]
+      (->> (.select doc ".wishBookList .listWrap > li, .article-list > li")
+           (remove #(some-> (.select ^Element % ".emptyNote") first))
+           (map (fn [^Element li]
+                  (let [title (or (some-> (.select li ".book_name") first .text normalize-text)
+                                 (some-> (.select li "p.title a") first .text normalize-text)
+                                 (some-> (.select li "p.title") first .text normalize-text))
+                        author (some-> (.select li ".bk_writer") first .text normalize-text)
+                        publish (some-> (.select li ".bk_publish") first .text normalize-text)
+                        spans (extract-info-spans li)]
+                    {:title (or title "")
+                     :author (or author
+                                 (span-value spans #"저자\s*:\s*(.+)")
+                                 "")
+                     :publisher (or publish
+                                    (span-value spans #"출판사\s*:\s*(.+)")
+                                    "")})))
+           vec))))
+
+(defn basket-list!
+  [client {:keys [group-key]}]
+  (try
+    (let [main-res (request client
+                            {:method :get
+                             :url basket-group-main-path
+                             :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          main-status (:status main-res)
+          main-html (:body main-res)]
+      (cond
+        (and (= 200 main-status)
+             (logged-out-page? main-html))
+        {:ok? false
+         :status :requires-login
+         :data {:groups [] :books [] :count 0}
+         :error nil}
+
+        (= 200 main-status)
+        (let [resolved-group-key (or group-key (parse-basket-group-key main-html))
+              group-info (parse-basket-group-info main-html)
+              books (if resolved-group-key
+                      (let [book-res (request client
+                                             {:method :post
+                                              :url basket-group-book-list-path
+                                              :form-params {"searchGroupKey" resolved-group-key
+                                                            "searchLibrary" "ALL"
+                                                            "searchKey" "TITLE"
+                                                            "searchValue" ""}
+                                              :headers {"Referer" (absolute-url client basket-group-main-path)}})]
+                        (parse-basket-books (:body book-res)))
+                      [])]
+          {:ok? true
+           :status :ok
+           :data {:group-key resolved-group-key
+                  :group-name (:group-name group-info)
+                  :book-count (:book-count group-info)
+                  :books books
+                  :count (count books)}
+           :error nil})
+
+        :else
+        (error-envelope :remote-error
+                        :basket-list-request-failed
+                        (str "Basket list request failed with status " main-status))))
+    (catch Exception e
+      (error-envelope :remote-error
+                      :http-request-failed
+                      (.getMessage e)))))
