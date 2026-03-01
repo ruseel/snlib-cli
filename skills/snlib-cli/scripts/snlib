@@ -5,13 +5,28 @@ SNLIB_GROUP="${SNLIB_GROUP:-io.github.ruseel}"
 SNLIB_ARTIFACT="${SNLIB_ARTIFACT:-snlib-cli}"
 SNLIB_VERSION="${SNLIB_VERSION:-0.1.0}"
 
+# Telegram/OpenClaw runs may not load interactive shell PATH.
+# Auto-discover local installs used in this workspace.
+if ! command -v java >/dev/null 2>&1; then
+  if [[ -x "$HOME/.local/jdk/bin/java" ]]; then
+    export JAVA_HOME="${JAVA_HOME:-$HOME/.local/jdk}"
+    export PATH="$JAVA_HOME/bin:$PATH"
+  fi
+fi
+
 if ! command -v clojure >/dev/null 2>&1; then
-  echo "ERROR: clojure command not found. Install Clojure CLI first." >&2
-  exit 127
+  if [[ -x "$HOME/.local/bin/clojure" ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
 fi
 
 if ! command -v java >/dev/null 2>&1; then
-  echo "ERROR: java command not found. Install a JDK first." >&2
+  echo "ERROR: java command not found. Install a JDK first (or set JAVA_HOME/PATH)." >&2
+  exit 127
+fi
+
+if ! command -v clojure >/dev/null 2>&1; then
+  echo "ERROR: clojure command not found. Install Clojure CLI first (or add ~/.local/bin to PATH)." >&2
   exit 127
 fi
 
