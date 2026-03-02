@@ -698,3 +698,119 @@
           (is (= :get (:method (first @calls))))
           (is (= :post (:method (second @calls))))
           (is (= "99999" (get-in (second @calls) [:form-params "searchGroupKey"]))))))))
+
+;; ---------------------------------------------------------------------------
+;; remote-error / exception branches
+;; ---------------------------------------------------------------------------
+
+(deftest search-books-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 503 :headers {} :body "maintenance"}]
+      (fn [_calls]
+        (let [result (core/search-books! client {:keyword "테스트"})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :search-request-failed (get-in result [:error :code]))))))))
+
+(deftest loan-status-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/loan-status! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :loan-status-request-failed (get-in result [:error :code]))))))))
+
+(deftest my-info-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/my-info! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :my-info-request-failed (get-in result [:error :code]))))))))
+
+(deftest loan-history-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/loan-history! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :loan-history-request-failed (get-in result [:error :code]))))))))
+
+(deftest reservation-status-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/reservation-status! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :reservation-status-request-failed (get-in result [:error :code]))))))))
+
+(deftest interloan-status-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/interloan-status! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :interloan-status-request-failed (get-in result [:error :code]))))))))
+
+(deftest hope-book-list-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/hope-book-list! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :hope-book-list-request-failed (get-in result [:error :code]))))))))
+
+(deftest hope-book-detail-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/hope-book-detail! client {:rec-key "12345"})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :hope-book-detail-request-failed (get-in result [:error :code]))))))))
+
+(deftest basket-list-returns-remote-error-on-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 500 :headers {} :body "error"}]
+      (fn [_calls]
+        (let [result (core/basket-list! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :basket-list-request-failed (get-in result [:error :code]))))))))
+
+(deftest core-apis-return-http-request-failed-on-request-exception
+  (let [client (core/create-client)
+        ex (ex-info "boom" {})]
+    (with-redefs [snlib.core/request (fn [_client _req] (throw ex))]
+      (doseq [[f opts]
+              [[core/login! {:user-id "alice" :password "secret"}]
+               [core/search-books! {:keyword "테스트"}]
+               [core/loan-status! {}]
+               [core/hope-book-request! {:book-info {:title "a" :author "b"}}]
+               [core/interlibrary-loan-request! {:manage-code "MB" :reg-no "R1"}]
+               [core/my-info! {}]
+               [core/loan-history! {}]
+               [core/reservation-status! {}]
+               [core/interloan-status! {}]
+               [core/hope-book-list! {}]
+               [core/hope-book-detail! {:rec-key "12345"}]
+               [core/basket-list! {}]]]
+        (let [result (f client opts)]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :http-request-failed (get-in result [:error :code]))))))))
