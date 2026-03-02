@@ -3,3 +3,4 @@
 target/
 .credential.edn
 snlib.jar
+*.har
