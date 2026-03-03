@@ -18,6 +18,13 @@
 (def ^:private credentials-file-path
   (str (System/getProperty "user.home") "/.config/snlib-cli/credentials.edn"))
 
+(def ^:private login-session-ttl-ms
+  (* 3 60 60 1000))
+
+(defn- now-ms
+  []
+  (System/currentTimeMillis))
+
 (defn- cookie->data
   [cookie]
   {:name (.getName cookie)
@@ -40,31 +47,35 @@
         (.setExpiryDate cookie (Date. expiry-ms)))
       cookie)))
 
-(defn- load-cookie-store
+(defn- load-session-data
   []
-  (let [store (cookies/cookie-store)
-        session-file (io/file session-file-path)]
+  (let [session-file (io/file session-file-path)]
     (if-not (.exists session-file)
-      store
+      {}
       (try
-        (let [session-data (edn/read-string (slurp session-file))
-              cookies-data (if (map? session-data)
-                             (:cookies session-data)
-                             nil)]
-          (doseq [cookie-data (or cookies-data [])
-                  :let [cookie (data->cookie cookie-data)]
-                  :when cookie]
-            (.addCookie store cookie))
-          store)
+        (let [session-data (edn/read-string (slurp session-file))]
+          (if (map? session-data)
+            session-data
+            {}))
         (catch Exception _
-          store)))))
+          {})))))
 
-(defn- save-cookie-store!
-  [store]
+(defn- load-cookie-store
+  [session-data]
+  (let [store (cookies/cookie-store)]
+    (doseq [cookie-data (or (:cookies session-data) [])
+            :let [cookie (data->cookie cookie-data)]
+            :when cookie]
+      (.addCookie store cookie))
+    store))
+
+(defn- save-session!
+  [store {:keys [last-login-at-ms]}]
   (let [session-file (io/file session-file-path)
         parent-dir (.getParentFile session-file)
         cookies-data (mapv cookie->data (.getCookies store))
-        payload {:saved-at-ms (System/currentTimeMillis)
+        payload {:saved-at-ms (now-ms)
+                 :last-login-at-ms last-login-at-ms
                  :cookies cookies-data}]
     (when parent-dir
       (.mkdirs parent-dir))
@@ -74,6 +85,26 @@
     (.setExecutable session-file false false)
     (.setReadable session-file true true)
     (.setWritable session-file true true)))
+
+(defn- login-session-expired?
+  [last-login-at-ms]
+  (and (number? last-login-at-ms)
+       (>= (- (now-ms) last-login-at-ms) login-session-ttl-ms)))
+
+(def ^:private login-exempt-commands
+  #{"login" "search-books"})
+
+(defn- requires-login-command?
+  [command]
+  (not (contains? login-exempt-commands command)))
+
+(defn- expired-login-result
+  []
+  {:ok? false
+   :status :requires-login
+   :data nil
+   :error {:code :login-session-expired
+           :message "Login session expired after 3 hours. Please run `snlib login` again."}})
 
 (defn- load-credentials
   []
@@ -307,23 +338,33 @@
        :error-text (str (str/join "\n" errors) "\n\n" help-text)}
 
       :else
-      (let [cookie-store (load-cookie-store)
+      (let [session-data (load-session-data)
+            last-login-at-ms (:last-login-at-ms session-data)
+            cookie-store (load-cookie-store session-data)
             client (core/create-client (assoc (select-keys options [:base-url :timeout-ms :user-agent])
-                                              :cookie-store cookie-store))]
+                                              :cookie-store cookie-store))
+            resolved-opts (command-opts command options)
+            now (now-ms)
+            result (if (and (requires-login-command? command)
+                            (login-session-expired? last-login-at-ms))
+                     (expired-login-result)
+                     ((get commands command) client resolved-opts))
+            next-last-login-at-ms (if (and (= command "login")
+                                           (:ok? result))
+                                    now
+                                    last-login-at-ms)]
         (try
-          (let [resolved-opts (command-opts command options)
-                result ((get commands command) client resolved-opts)]
-            (when (and (= command "login")
-                       (:ok? result)
-                       (:save-credentials options)
-                       (not (str/blank? (or (:user-id resolved-opts) "")))
-                       (not (str/blank? (or (:password resolved-opts) ""))))
-              (save-credentials! resolved-opts))
-            {:exit-code (if (:ok? result) 0 2)
-             :result result
-             :pretty? (:pretty options)})
+          (when (and (= command "login")
+                     (:ok? result)
+                     (:save-credentials options)
+                     (not (str/blank? (or (:user-id resolved-opts) "")))
+                     (not (str/blank? (or (:password resolved-opts) ""))))
+            (save-credentials! resolved-opts))
+          {:exit-code (if (:ok? result) 0 2)
+           :result result
+           :pretty? (:pretty options)}
           (finally
-            (save-cookie-store! cookie-store)))))))
+            (save-session! cookie-store {:last-login-at-ms next-last-login-at-ms})))))))
 
 (defn -main
   [& args]
