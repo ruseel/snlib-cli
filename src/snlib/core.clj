@@ -1,8 +1,4 @@
 (ns snlib.core
-  "Core command handlers for SNLib.
-
-  Each public `*!` function corresponds to a single CLI command and accepts
-  only that command's `opts` map."
   (:require
    [clj-http.client :as http]
    [clj-http.cookies :as cookies]
@@ -36,13 +32,7 @@
 (def ^:private basket-group-book-list-path "/intro/menu/10057/program/30018/mypage/basketGroupBookList.do")
 
 (defn create-client
-  "Create a client atom with cookie-store for session reuse.
-
-  opts (optional):
-  - :base-url (default: \"https://snlib.go.kr\")
-  - :timeout-ms (default: 20000)
-  - :user-agent (default: \"Mozilla/5.0 snlib-lib\")
-  - :cookie-store (default: fresh in-memory cookie-store)"
+  "Create a client atom with cookie-store for session reuse."
   ([] (create-client {}))
   ([{:keys [base-url timeout-ms user-agent cookie-store]
      :or {base-url default-base-url
@@ -105,12 +95,6 @@
                    body)))))
 
 (defn login!
-  "Run `login` command.
-
-  opts:
-  - :user-id (required)
-  - :password (required)
-  - :return-url (default: \"aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==\")"
   [client {:keys [user-id password return-url]}]
   (let [missing (missing-input {:user-id user-id :password password})]
     (if (seq missing)
@@ -284,15 +268,6 @@
       (some-> digits parse-int-safe))))
 
 (defn search-books!
-  "Run `search-books` command.
-
-  opts:
-  - :keyword (required)
-  - :manage-code or :library-code (optional, single or multiple)
-  - :page (default: 1)
-  - :per-page (default: 10)
-  - :sort (default: \"SIMILAR\")
-  - :order (default: \"DESC\")"
   [client {:keys [keyword] :as opts}]
   (if (str/blank? (or keyword ""))
     (error-envelope :invalid-input
@@ -450,10 +425,6 @@
                     (or (:return-status loan) ""))))
 
 (defn loan-status!
-  "Run `loan-status` command.
-
-  opts:
-  - :include-history? (default: false)"
   [client {:keys [include-history?]}]
   (try
     (let [default-opts (default-request-opts client)
@@ -508,6 +479,8 @@
    "handphone" "handPhone"
    "manage-code" "manageCode"
    "managecode" "manageCode"
+   "mobile-no" "handPhone"
+   "mobileno" "handPhone"
    "mobile-no1" "mobileNo1"
    "mobileno1" "mobileNo1"
    "mobile-no2" "mobileNo2"
@@ -606,11 +579,58 @@
              {}
              (if (map? m) m {})))
 
+(defn- split-hand-phone
+  [value]
+  (let [raw (some-> value str str/trim)]
+    (when-not (str/blank? raw)
+      (let [parts (->> (str/split raw #"-")
+                       (map str/trim)
+                       (remove str/blank?)
+                       vec)
+            digits (str/replace raw #"\D" "")]
+        (cond
+          (= 3 (count parts))
+          {"mobileNo1" (nth parts 0)
+           "mobileNo2" (nth parts 1)
+           "mobileNo3" (nth parts 2)}
+
+          (= 11 (count digits))
+          {"mobileNo1" (subs digits 0 3)
+           "mobileNo2" (subs digits 3 7)
+           "mobileNo3" (subs digits 7 11)}
+
+          (= 10 (count digits))
+          {"mobileNo1" (subs digits 0 3)
+           "mobileNo2" (subs digits 3 6)
+           "mobileNo3" (subs digits 6 10)}
+
+          :else nil)))))
+
+(defn- enrich-hope-book-phone-fields
+  [payload]
+  (let [mobile1 (get payload "mobileNo1")
+        mobile2 (get payload "mobileNo2")
+        mobile3 (get payload "mobileNo3")
+        payload' (if (and (str/blank? (get payload "handPhone"))
+                          (every? #(not (str/blank? (or % "")))
+                                  [mobile1 mobile2 mobile3]))
+                   (assoc payload "handPhone" (str mobile1 "-" mobile2 "-" mobile3))
+                   payload)
+        derived (split-hand-phone (get payload' "handPhone"))]
+    (if-not (map? derived)
+      payload'
+      (reduce-kv (fn [acc k v]
+                   (if (str/blank? (get acc k))
+                     (assoc acc k v)
+                     acc))
+                 payload'
+                 derived))))
+
 (defn- build-hope-book-payload
-  [form-spec book-info applicant-info]
-  (merge (form-hidden-defaults form-spec)
-         (stringify-field-map book-info)
-         (stringify-field-map applicant-info)))
+  [form-spec request]
+  (-> (merge (form-hidden-defaults form-spec)
+             (stringify-field-map request))
+      enrich-hope-book-phone-fields))
 
 (defn- hope-book-submit-allowed?
   [{:keys [allow-submit?]}]
@@ -647,17 +667,8 @@
   #"(?i)(신청\s*실패|처리\s*실패|오류|에러|error|차단|로그인)")
 
 (defn hope-book-request!
-  "Run `hope-book-request` command.
-
-  opts:
-  - :book-info (map, optional)
-  - :applicant-info (map, optional)
-  - :submit? (default: false; dry-run unless true)
-  - :allow-submit? (default: false)
-  - :page-path (default: \"/intro/menu/10045/program/30011/hopeBookApply.do\")
-  - :submit-path (default: form action -> guessed path -> \"/intro/menu/10045/program/30011/hopeBookApplyProc.do\")"
   [client
-   {:keys [book-info applicant-info submit? page-path submit-path]
+   {:keys [request submit? page-path submit-path]
     :as opts}]
   (try
     (let [default-opts (default-request-opts client)
@@ -676,7 +687,7 @@
                                    (:action selected-form)
                                    (guess-hope-book-submit-path page-html)
                                    default-hope-book-submit-path)
-          prepared-payload (build-hope-book-payload selected-form book-info applicant-info)
+          prepared-payload (build-hope-book-payload selected-form request)
           base-data {:prepared-payload prepared-payload
                      :submit-attempted? (boolean submit?)
                      :submit-blocked? false
@@ -830,16 +841,6 @@
 
 (defn interlibrary-loan-request!
   "Request interlibrary loan.
-
-  opts:
-  - :manage-code (required)
-  - :reg-no (required)
-  - :apl-lib-code (required only when :submit? is true)
-  - :give-lib-code (optional, auto-filled from popup when possible)
-  - :user-key (optional, auto-filled from popup when possible)
-  - :appendix-apply-yn (default: \"N\")
-  - :submit? (default: false; dry-run unless true)
-  - :allow-submit? (default: false)
 
   Required options:
   - :manage-code and :reg-no (from search/detail interloan target)
@@ -1341,10 +1342,6 @@
              {})))))
 
 (defn hope-book-detail!
-  "Run `hope-book-detail` command.
-
-  opts:
-  - :rec-key (required)"
   [client {:keys [rec-key]}]
   (if (str/blank? (or rec-key ""))
     (error-envelope :invalid-input
@@ -1428,10 +1425,6 @@
            vec))))
 
 (defn basket-list!
-  "Run `basket-list` command.
-
-  opts:
-  - :group-key (optional, defaults to first group parsed from basket main page)"
   [client {:keys [group-key]}]
   (try
     (let [default-opts (default-request-opts client)

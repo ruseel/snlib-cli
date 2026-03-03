@@ -33,6 +33,25 @@
          (is (= 0 (:exit-code result)))
          (is (= {:include-history? true} @captured-opts))))))
 
+(deftest run-cli-maps-request-edn-for-hope-book-request
+  (let [captured-opts (atom nil)]
+    (with-cli-redefs
+      {(cli-var 'commands)
+       {"hope-book-request" (fn [_client opts]
+                              (reset! captured-opts opts)
+                              {:ok? true :status :ok :data {} :error nil})}}
+      #(let [result (cli/run-cli ["hope-book-request"
+                                  "--request-edn" "{:title \"테스트\" :author \"홍길동\" :handPhone \"010-3764-0262\"}"
+                                  "--submit"
+                                  "--allow-submit"])]
+         (is (= 0 (:exit-code result)))
+         (is (= {:submit? true
+                 :allow-submit? true
+                 :request {:title "테스트"
+                           :author "홍길동"
+                           :handPhone "010-3764-0262"}}
+                @captured-opts))))))
+
 (deftest run-cli-saves-credentials-only-when-explicitly-enabled
   (let [saved (atom [])]
     (with-cli-redefs
