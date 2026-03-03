@@ -68,7 +68,12 @@
                  :cookies cookies-data}]
     (when parent-dir
       (.mkdirs parent-dir))
-    (spit session-file (pr-str payload))))
+    (spit session-file (pr-str payload))
+    (.setReadable session-file false false)
+    (.setWritable session-file false false)
+    (.setExecutable session-file false false)
+    (.setReadable session-file true true)
+    (.setWritable session-file true true)))
 
 (defn- load-credentials
   []
@@ -92,7 +97,12 @@
                  :saved-at-ms (System/currentTimeMillis)}]
     (when parent-dir
       (.mkdirs parent-dir))
-    (spit credentials-file (pr-str payload))))
+    (spit credentials-file (pr-str payload))
+    (.setReadable credentials-file false false)
+    (.setWritable credentials-file false false)
+    (.setExecutable credentials-file false false)
+    (.setReadable credentials-file true true)
+    (.setWritable credentials-file true true)))
 
 (def ^:private commands
   {"login" core/login!
@@ -146,6 +156,7 @@
    [nil "--sort SORT" "Search sort key (default: SIMILAR)"]
    [nil "--order ORDER" "Search order (default: DESC)"]
    [nil "--include-history" "Include returned loans in loan-status"]
+   [nil "--save-credentials" "Persist login credentials locally (disabled by default)"]
    [nil "--submit" "Perform submit action (otherwise dry run)"]
    [nil "--allow-submit" "Allow write submit from CLI"]
    [nil "--page-path PATH" "Override hope-book page path"]
@@ -210,7 +221,7 @@
     (select-keys opts [:keyword :library-code :page :per-page :sort :order])
 
     "loan-status"
-    (select-keys opts [:include-history?])
+    {:include-history? (boolean (:include-history opts))}
 
     "hope-book-request"
     (-> (select-keys opts [:page-path :submit-path])
@@ -291,6 +302,7 @@
                 result ((get commands command) client resolved-opts)]
             (when (and (= command "login")
                        (:ok? result)
+                       (:save-credentials options)
                        (not (str/blank? (or (:user-id resolved-opts) "")))
                        (not (str/blank? (or (:password resolved-opts) ""))))
               (save-credentials! resolved-opts))

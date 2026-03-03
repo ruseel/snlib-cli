@@ -793,6 +793,63 @@
           (is (= :remote-error (:status result)))
           (is (= :basket-list-request-failed (get-in result [:error :code]))))))))
 
+(deftest interlibrary-loan-request-returns-remote-error-on-popup-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 503 :headers {} :body "maintenance"}]
+      (fn [_calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
+                                                               :reg-no "BEM000133237"})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :interloan-popup-request-failed (get-in result [:error :code]))))))))
+
+(deftest hope-book-request-returns-remote-error-on-page-non-200
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 503 :headers {} :body "maintenance"}]
+      (fn [_calls]
+        (let [result (core/hope-book-request! client {:book-info {:title "a" :author "b"}})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :hope-book-page-request-failed (get-in result [:error :code]))))))))
+
+(deftest hope-book-request-submit-detects-failure-message
+  (let [client (core/create-client)
+        html (str
+              "<form id='registForm' name='registForm' method='post'>"
+              "<input type='hidden' name='manageCode' value='MS'/>"
+              "<input type='text' name='title' value=''/>"
+              "<input type='text' name='author' value=''/>"
+              "</form>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}
+       {:status 200
+        :headers {"content-type" "text/html"}
+        :body "<script>alert('희망도서 신청 실패');</script>"}]
+      (fn [_calls]
+        (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
+                                                                   :author "홍길동"}
+                                                      :submit? true
+                                                      :allow-submit? true})]
+          (is (= false (:ok? result)))
+          (is (= :submit-failed (:status result)))
+          (is (= :hope-book-submit-failed (get-in result [:error :code]))))))))
+
+(deftest basket-list-returns-remote-error-when-books-request-non-200
+  (let [client (core/create-client)
+        main-html (str
+                   "<div class='htitle'>기본<span class='normal'>(3건)</span></div>"
+                   "<script>function x() { fnBasketGroupBookMore(99999); }</script>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body main-html}
+       {:status 503 :headers {} :body "maintenance"}]
+      (fn [_calls]
+        (let [result (core/basket-list! client {})]
+          (is (= false (:ok? result)))
+          (is (= :remote-error (:status result)))
+          (is (= :basket-list-books-request-failed (get-in result [:error :code]))))))))
+
 (deftest core-apis-return-http-request-failed-on-request-exception
   (let [client (core/create-client)
         ex (ex-info "boom" {})]
