@@ -501,6 +501,7 @@
       (fn [calls]
         (let [result (core/hope-book-request! client {:request {:title "클린 코드"
                                                                 :author "Robert C. Martin"
+                                                                :ea-isbn "9788966262281"
                                                                 :price 32000
                                                                 :email "tester@example.com"
                                                                 :sms-receipt-yn "Y"
@@ -516,6 +517,7 @@
                  (:url (second @calls))))
           (is (= "MS" (get-in (second @calls) [:form-params "manageCode"])))
           (is (= "클린 코드" (get-in (second @calls) [:form-params "title"])))
+          (is (= "9788966262281" (get-in (second @calls) [:form-params "eaIsbn"])))
           (is (= "32000" (get-in (second @calls) [:form-params "price"])))
           (is (= "Y" (get-in (second @calls) [:form-params "smsReceiptYn"])))
           (is (= "010-1234-5678" (get-in (second @calls) [:form-params "handPhone"])))
