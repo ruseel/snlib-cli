@@ -15,13 +15,22 @@ Use this skill to run Seongnam Library commands quickly from the CLI.
 
 ```bash
 # first-time login
-./scripts/snlib login --pretty
+./scripts/snlib-cli login --pretty
 
 # common read-only checks
-./scripts/snlib my-info --pretty
-./scripts/snlib loan-status --pretty
-./scripts/snlib search-books --keyword "제2차 세계대전 발췌본" --pretty
+./scripts/snlib-cli my-info --pretty
+./scripts/snlib-cli loan-status --pretty
+./scripts/snlib-cli search-books --keyword "제2차 세계대전 발췌본" --pretty
 ```
+
+## Git Reference Policy (Tag Only)
+
+This launcher resolves the CLI directly from a GitHub repository via Clojure git deps.
+
+- It uses `:git/url` + `:git/tag`.
+- It does **not** use SHA refs.
+- It does **not** fall back to `main`/default branch when tag is missing.
+- If `SNLIB_GIT_TAG` is empty, launcher exits with an error.
 
 ## Common Workflows
 
@@ -41,22 +50,22 @@ Read `references/commands.md` for command patterns and end-to-end flows.
 
 ## Optional Advanced Configuration
 
-The launcher supports env var overrides when you need a different artifact target:
+The launcher supports env var overrides for the target GitHub repository and tag:
 
-- `SNLIB_GROUP` (default `io.github.ruseel`)
-- `SNLIB_ARTIFACT` (default `snlib-cli`)
-- `SNLIB_VERSION` (default `0.1.0`)
+- `SNLIB_GITHUB_REPO` (default `https://github.com/ruseel/snlib-cli`)
+- `SNLIB_GIT_TAG` (default `v0.1.0`)
 
 ```bash
-SNLIB_VERSION=0.2.0 ./scripts/snlib my-info --pretty
+SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli my-info --pretty
+SNLIB_GITHUB_REPO=https://github.com/example/snlib-cli SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli loan-status --pretty
 ```
 
 ## Troubleshooting
 
 If authentication fails:
 
-1. Run `./scripts/snlib login --pretty`
+1. Run `./scripts/snlib-cli login --pretty`
 2. Check `~/.config/snlib-cli/credentials.edn`
 3. Retry your target command
 
-If artifact resolution fails, verify artifact coordinates/version and network/repository access.
+If dependency resolution fails, verify repository URL/tag and network access.
