@@ -13,8 +13,9 @@
 (defn- with-cli-redefs
   [overrides f]
   (let [defaults {(cli-var 'commands) {}
-                  (cli-var 'load-cookie-store) (fn [] :cookie-store)
-                  (cli-var 'save-cookie-store!) (fn [_] nil)
+                  (cli-var 'load-session-data) (fn [] {})
+                  (cli-var 'load-cookie-store) (fn [_] :cookie-store)
+                  (cli-var 'save-session!) (fn [_ _] nil)
                   (cli-var 'load-credentials) (fn [] {})
                   (cli-var 'save-credentials!) (fn [_] nil)
                   #'core/create-client (fn [_opts] :client)}]
@@ -63,3 +64,54 @@
     #(let [result (cli/run-cli ["my-info"])]
        (is (= 2 (:exit-code result)))
        (is (= :requires-login (get-in result [:result :status]))))))
+
+(deftest run-cli-blocks-login-required-command-when-session-expired
+  (let [now 50000000
+        ttl (* 3 60 60 1000)
+        login-at (- now ttl 1)]
+    (with-cli-redefs
+      {(cli-var 'now-ms) (constantly now)
+       (cli-var 'load-session-data) (constantly {:last-login-at-ms login-at})
+       (cli-var 'commands) {"loan-status" (fn [& _]
+                                            (throw (ex-info "should not execute" {})))}
+       (cli-var 'command-opts) (fn [_ _] {})}
+      #(let [result (cli/run-cli ["loan-status"])]
+         (is (= 2 (:exit-code result)))
+         (is (= :requires-login (get-in result [:result :status])))
+         (is (= :login-session-expired
+                (get-in result [:result :error :code])))))))
+
+(deftest run-cli-updates-last-login-time-on-successful-login
+  (let [now 1234567
+        saved-session (atom nil)]
+    (with-cli-redefs
+      {(cli-var 'now-ms) (constantly now)
+       (cli-var 'load-session-data) (constantly {:last-login-at-ms 10})
+       (cli-var 'save-session!) (fn [_ payload]
+                                  (reset! saved-session payload))
+       (cli-var 'commands) {"login" (fn [_ _]
+                              {:ok? true
+                               :status :ok
+                               :data {:authenticated? true}
+                               :error nil})}}
+      #(let [result (cli/run-cli ["login" "--user-id" "alice" "--password" "secret"])]
+         (is (= 0 (:exit-code result)))
+         (is (= {:last-login-at-ms now}
+                @saved-session))))))
+
+(deftest run-cli-allows-login-exempt-command-even-when-session-expired
+  (let [now 80000000
+        ttl (* 3 60 60 1000)
+        login-at (- now ttl 10)]
+    (with-cli-redefs
+      {(cli-var 'now-ms) (constantly now)
+       (cli-var 'load-session-data) (constantly {:last-login-at-ms login-at})
+       (cli-var 'commands) {"search-books" (fn [_ _]
+                                             {:ok? true
+                                              :status :ok
+                                              :data {:items []}
+                                              :error nil})}
+       (cli-var 'command-opts) (fn [_ _] {:keyword "abc"})}
+      #(let [result (cli/run-cli ["search-books" "--keyword" "abc"])]
+         (is (= 0 (:exit-code result)))
+         (is (= :ok (get-in result [:result :status])))))))
