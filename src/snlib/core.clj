@@ -606,6 +606,12 @@
         message-from-body
         message-from-title)))
 
+(def ^:private hope-book-submit-success-pattern
+  #"(?i)(신청\s*완료|등록\s*완료|정상\s*처리|완료\s*되었습니다)")
+
+(def ^:private hope-book-submit-failure-pattern
+  #"(?i)(신청\s*실패|처리\s*실패|오류|에러|error|차단|로그인)")
+
 (defn hope-book-request!
   [client
    {:keys [book-info applicant-info submit? page-path submit-path]
@@ -616,9 +622,9 @@
                             {:method :get
                              :url resolved-page-path
                              :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          page-status (:status page-res)
           page-html (:body page-res)
-          page-logged-in? (and (= 200 (:status page-res))
-                               (not (logged-out-page? page-html)))
+          page-logged-out? (logged-out-page? page-html)
           forms (extract-forms page-html)
           selected-form (select-hope-book-form forms)
           resolved-submit-path (or submit-path
@@ -631,7 +637,12 @@
                      :submit-blocked? false
                      :result-message nil}]
       (cond
-        (not page-logged-in?)
+        (not= 200 page-status)
+        (error-envelope :remote-error
+                        :hope-book-page-request-failed
+                        (str "Hope-book page request failed with status " page-status))
+
+        page-logged-out?
         {:ok? false
          :status :requires-login
          :data (assoc base-data
@@ -659,10 +670,24 @@
                                    :url resolved-submit-path
                                    :form-params prepared-payload
                                    :headers {"Referer" (absolute-url client resolved-page-path)}})
+              submit-body (or (:body submit-res) "")
               status-code (:status submit-res)
-              success? (<= 200 status-code 399)
-              result-message (or (parse-hope-book-result-message (:body submit-res))
+              result-message (or (parse-hope-book-result-message submit-body)
                                  (parse-hope-book-result-message page-html))
+              logged-out? (logged-out-page? submit-body)
+              success-signal? (boolean
+                               (or (re-find hope-book-submit-success-pattern submit-body)
+                                   (some->> result-message
+                                            (re-find hope-book-submit-success-pattern))))
+              failure-signal? (boolean
+                               (or logged-out?
+                                   (re-find hope-book-submit-failure-pattern submit-body)
+                                   (some->> result-message
+                                            (re-find hope-book-submit-failure-pattern))))
+              success? (and (<= 200 status-code 399)
+                            (not failure-signal?)
+                            (or success-signal?
+                                (str/blank? result-message)))
               status (if success? :ok :submit-failed)]
           {:ok? success?
            :status status
@@ -779,16 +804,22 @@
                                   :query-params {"manageCode" manage-code
                                                  "regNo" reg-no}
                                   :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
-              merged-opts (merge (parse-interloan-popup-values (:body popup-res)) opts)
+              popup-status (:status popup-res)
+              popup-html (:body popup-res)
+              merged-opts (merge (parse-interloan-popup-values popup-html) opts)
               prepared-payload (build-interloan-payload merged-opts)
-              popup-logged-in? (and (= 200 (:status popup-res))
-                                    (not (logged-out-page? (:body popup-res))))
+              popup-logged-out? (logged-out-page? popup-html)
               base-data {:prepared-payload prepared-payload
                          :submit-attempted? (boolean submit?)
                          :submit-blocked? false
                          :result-message nil}]
           (cond
-            (not popup-logged-in?)
+            (not= 200 popup-status)
+            (error-envelope :remote-error
+                            :interloan-popup-request-failed
+                            (str "Interloan popup request failed with status " popup-status))
+
+            popup-logged-out?
             {:ok? false
              :status :requires-login
              :data (assoc base-data
@@ -1315,25 +1346,43 @@
         (= 200 main-status)
         (let [resolved-group-key (or group-key (parse-basket-group-key main-html))
               group-info (parse-basket-group-info main-html)
-              books (if resolved-group-key
-                      (let [book-res (request client
-                                             {:method :post
-                                              :url basket-group-book-list-path
-                                              :form-params {"searchGroupKey" resolved-group-key
-                                                            "searchLibrary" "ALL"
-                                                            "searchKey" "TITLE"
-                                                            "searchValue" ""}
-                                              :headers {"Referer" (absolute-url client basket-group-main-path)}})]
-                        (parse-basket-books (:body book-res)))
-                      [])]
-          {:ok? true
-           :status :ok
-           :data {:group-key resolved-group-key
-                  :group-name (:group-name group-info)
-                  :book-count (:book-count group-info)
-                  :books books
-                  :count (count books)}
-           :error nil})
+              book-res (when resolved-group-key
+                         (request client
+                                  {:method :post
+                                   :url basket-group-book-list-path
+                                   :form-params {"searchGroupKey" resolved-group-key
+                                                 "searchLibrary" "ALL"
+                                                 "searchKey" "TITLE"
+                                                 "searchValue" ""}
+                                   :headers {"Referer" (absolute-url client basket-group-main-path)}}))
+              book-status (:status book-res)
+              book-html (:body book-res)]
+          (cond
+            (and resolved-group-key
+                 (not= 200 book-status))
+            (error-envelope :remote-error
+                            :basket-list-books-request-failed
+                            (str "Basket list books request failed with status " book-status))
+
+            (and resolved-group-key
+                 (logged-out-page? book-html))
+            {:ok? false
+             :status :requires-login
+             :data {:groups [] :books [] :count 0}
+             :error nil}
+
+            :else
+            (let [books (if resolved-group-key
+                          (parse-basket-books book-html)
+                          [])]
+              {:ok? true
+               :status :ok
+               :data {:group-key resolved-group-key
+                      :group-name (:group-name group-info)
+                      :book-count (:book-count group-info)
+                      :books books
+                      :count (count books)}
+               :error nil})))
 
         :else
         (error-envelope :remote-error
