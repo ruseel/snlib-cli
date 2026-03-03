@@ -1,6 +1,6 @@
 ---
 name: snlib-cli
-description: Run Seongnam Library (snlib.go.kr) tasks from the command line. Use when you need login, book search, my-info/loan status checks, interlibrary loan request/status, hope-book request/list/detail, or basket queries.
+description: Run Seongnam Library (snlib.go.kr) tasks from the command line. Use when you need login, book search, my-info (내 정보 조회)/loan status (대출 현황) checks, interlibrary loan (상호대차) request/status, hope-book (희망도서) request/list/detail, or basket (관심 도서함) queries.
 ---
 
 # snlib-cli
@@ -34,10 +34,10 @@ This launcher resolves the CLI directly from a GitHub repository via Clojure git
 
 ## Common Workflows
 
-- Account/session: `login`, `my-info`
-- Discovery: `search-books`, `basket`
-- Status checks: `loan-status`, `interloan-status`, `hope-book-list`, `hope-book-detail`
-- Requests (write actions): `interloan-request`, `hope-book-request`
+- Account/session (계정/세션): `login`, `my-info` (내 정보 조회)
+- Discovery (도서 탐색): `search-books`, `basket` (관심 도서함)
+- Status checks (현황 조회): `loan-status` (대출 현황), `interloan-status` (상호대차 현황), `hope-book-list`/`hope-book-detail` (희망도서 신청 내역/상세)
+- Requests (write actions, 신청/요청): `interloan-request` (상호대차 신청), `hope-book-request` (희망도서 신청)
 
 Read `references/commands.md` for command patterns and end-to-end flows.
 
