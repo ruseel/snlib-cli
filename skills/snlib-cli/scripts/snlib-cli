@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SNLIB_GROUP="${SNLIB_GROUP:-io.github.ruseel}"
-SNLIB_ARTIFACT="${SNLIB_ARTIFACT:-snlib-cli}"
-SNLIB_VERSION="${SNLIB_VERSION:-0.1.0}"
+SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-https://github.com/ruseel/snlib-cli}"
+SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-v0.1.0}"
 
 # Telegram/OpenClaw runs may not load interactive shell PATH.
 # Auto-discover local installs used in this workspace.
@@ -30,6 +29,11 @@ if ! command -v clojure >/dev/null 2>&1; then
   exit 127
 fi
 
-deps_edn="{:deps {${SNLIB_GROUP}/${SNLIB_ARTIFACT} {:mvn/version \"${SNLIB_VERSION}\"}}}"
+if [[ -z "${SNLIB_GIT_TAG}" ]]; then
+  echo "ERROR: SNLIB_GIT_TAG must be set. This launcher only supports tag-based refs (SHA/main not allowed)." >&2
+  exit 2
+fi
+
+deps_edn="{:deps {io.github.ruseel/snlib-cli {:git/url \"${SNLIB_GITHUB_REPO}\" :git/tag \"${SNLIB_GIT_TAG}\"}}}"
 
 exec clojure -Sdeps "$deps_edn" -M -m snlib.cli "$@"
