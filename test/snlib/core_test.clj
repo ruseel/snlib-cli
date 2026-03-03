@@ -310,7 +310,7 @@
                                                       :appendix-apply-yn "N"
                                                       :submit? true
                                                       :allow-submit? true})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= :ok (:status result)))
           (is (= "상호대차 신청이 완료되었습니다."
                  (get-in result [:data :result-message])))
@@ -345,6 +345,34 @@
                   :data nil
                   :error {:code :missing-required-input
                           :message "Missing required input: apl-lib-code"}}
+                 result))
+          (is (zero? (count @calls))))))))
+
+(deftest interlibrary-loan-request-normalizes-manage-code-before-http
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code " mb "
+                                                               :reg-no "BEM000133237"})]
+          (is (true? (:ok? result)))
+          (is (= "MB"
+                 (get-in (first @calls) [:query-params "manageCode"]))))))))
+
+(deftest interlibrary-loan-request-validates-code-format-before-http
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body "<html>unused</html>"}]
+      (fn [calls]
+        (let [result (core/interlibrary-loan-request! client {:manage-code "M1"
+                                                               :reg-no "BEM000133237"
+                                                               :apl-lib-code "14148A"
+                                                               :submit? true})]
+          (is (= {:ok? false
+                  :status :invalid-input
+                  :data nil
+                  :error {:code :invalid-input-format
+                          :message "Invalid input format: manage-code, apl-lib-code"}}
                  result))
           (is (zero? (count @calls))))))))
 
@@ -392,7 +420,7 @@
                                                                        :mobile-no1 "010"
                                                                        :mobile-no2 "1234"
                                                                        :mobile-no3 "5678"}})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= :ok (:status result)))
           (is (= 1 (count @calls)))
           (is (= :get (:method (first @calls))))
@@ -450,7 +478,7 @@
                                                                        :sms-receipt-yn "Y"}
                                                       :submit? true
                                                       :allow-submit? true})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= :ok (:status result)))
           (is (= "희망도서 신청 완료" (get-in result [:data :result-message])))
           (is (= 2 (count @calls)))
@@ -485,7 +513,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/my-info! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= "testuser" (get-in result [:data :user-id])))
           (is (= "12345678" (get-in result [:data :member-no])))
           (is (= "정회원" (get-in result [:data :member-type])))
@@ -526,7 +554,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/loan-history! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (is (= 1 (count (get-in result [:data :loans]))))
           (let [loan (first (get-in result [:data :loans]))]
@@ -556,7 +584,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/reservation-status! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= 0 (get-in result [:data :count])))
           (is (= [] (get-in result [:data :reservations])))
           (is (= 1 (count @calls)))
@@ -584,7 +612,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/interloan-status! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (let [req (first (get-in result [:data :requests]))]
            (is (= "테스트 도서" (:title req)))
@@ -615,7 +643,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/hope-book-list! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (let [item (first (get-in result [:data :items]))]
            (is (= "테스트 도서" (:title item)))
@@ -642,7 +670,7 @@
           [{:status 200 :headers {"content-type" "text/html"} :body html}]
           (fn [calls]
           (let [result (core/hope-book-detail! client {:rec-key "12345"})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= "테스트 도서" (get-in result [:data :title])))
           (is (= "홍길동" (get-in result [:data :author])))
           (is (= "9781234567890" (get-in result [:data :isbn])))
@@ -686,7 +714,7 @@
           {:status 200 :headers {"content-type" "text/html"} :body book-html}]
           (fn [calls]
           (let [result (core/basket-list! client {})]
-          (is (= true (:ok? result)))
+          (is (true? (:ok? result)))
           (is (= "99999" (get-in result [:data :group-key])))
           (is (= "기본" (get-in result [:data :group-name])))
           (is (= 3 (get-in result [:data :book-count])))
