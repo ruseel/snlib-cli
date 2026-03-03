@@ -46,17 +46,17 @@
 (defn invalid-interloan-input
   [{:keys [manage-code apl-lib-code give-lib-code submit?]}]
   (vec
-   (concat
-    (when (and (some? manage-code)
-               (not (str/blank? manage-code))
-               (not (valid-manage-code? manage-code)))
-      [:manage-code])
-    (when (and submit?
-               (some? apl-lib-code)
-               (not (str/blank? apl-lib-code))
-               (not (valid-lib-code? apl-lib-code)))
-      [:apl-lib-code])
-    (when (and (some? give-lib-code)
-               (not (str/blank? give-lib-code))
-               (not (valid-lib-code? give-lib-code)))
-      [:give-lib-code]))))
+    (concat
+      (when (and (some? manage-code)
+                 (not (str/blank? manage-code))
+                 (not (valid-manage-code? manage-code)))
+        [:manage-code])
+      (when (and submit?
+                 (some? apl-lib-code)
+                 (not (str/blank? apl-lib-code))
+                 (not (valid-lib-code? apl-lib-code)))
+        [:apl-lib-code])
+      (when (and (some? give-lib-code)
+                 (not (str/blank? give-lib-code))
+                 (not (valid-lib-code? give-lib-code)))
+        [:give-lib-code]))))
