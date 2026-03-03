@@ -1,71 +1,62 @@
 ---
 name: snlib-cli
-description: Run Seongnam Library (snlib.go.kr) workflows via Clojure CLI without bundling an uberjar. Use when you need login, book search, loan status, interlibrary loan request/status, hope-book request/list/detail, or basket queries from a lightweight Maven artifact + `clojure -M -m snlib.cli` launcher.
+description: Run Seongnam Library (snlib.go.kr) tasks from the command line. Use when you need login, book search, my-info/loan status checks, interlibrary loan request/status, hope-book request/list/detail, or basket queries.
 ---
 
 # snlib-cli
 
-Use this skill to execute the Seongnam Library CLI from a Maven artifact (small distribution, no fat jar).
+Use this skill to run Seongnam Library commands quickly from the CLI.
 
 ## Quick Start
 
 1. Ensure Java and `clojure` are installed.
-2. Run `scripts/snlib` from this skill directory.
-3. Login once, then run commands normally.
+2. From this skill directory, run login once.
+3. Run read-only commands first to verify your session.
 
 ```bash
-# first-time login (credentials are loaded/saved by snlib.cli)
+# first-time login
 ./scripts/snlib login --pretty
 
-# search
-./scripts/snlib search-books --keyword "제2차 세계대전 발췌본" --pretty
-
-# mypage
+# common read-only checks
 ./scripts/snlib my-info --pretty
 ./scripts/snlib loan-status --pretty
-./scripts/snlib interloan-status --pretty
+./scripts/snlib search-books --keyword "제2차 세계대전 발췌본" --pretty
 ```
 
-## Runtime Model (A안)
+## Common Workflows
 
-Always run via Maven dependency resolution at execution time:
+- Account/session: `login`, `my-info`
+- Discovery: `search-books`, `basket`
+- Status checks: `loan-status`, `interloan-status`, `hope-book-list`, `hope-book-detail`
+- Requests (write actions): `interloan-request`, `hope-book-request`
 
-- Command shape: `clojure -Sdeps ... -M -m snlib.cli ...`
-- Do not build/use uberjar in this skill.
-- Keep launcher tiny; keep app updates in Maven artifact versions.
+Read `references/commands.md` for command patterns and end-to-end flows.
 
-## Versioning Rules
+## Safety Rules
 
-- Pin a default artifact version in `scripts/snlib`.
-- Allow override using env vars:
-  - `SNLIB_GROUP` (default `io.github.ruseel`)
-  - `SNLIB_ARTIFACT` (default `snlib-cli`)
-  - `SNLIB_VERSION` (default `0.1.0`)
-- Override per command when needed:
+- Start with read-only commands before any write action.
+- Write actions require explicit confirmation flags:
+  - `--submit --allow-submit`
+- Credentials and session data are stored under `~/.config/snlib-cli/`.
+
+## Optional Advanced Configuration
+
+The launcher supports env var overrides when you need a different artifact target:
+
+- `SNLIB_GROUP` (default `io.github.ruseel`)
+- `SNLIB_ARTIFACT` (default `snlib-cli`)
+- `SNLIB_VERSION` (default `0.1.0`)
 
 ```bash
 SNLIB_VERSION=0.2.0 ./scripts/snlib my-info --pretty
 ```
 
-## Operational Safety
-
-- Use read-only commands first (`my-info`, `loan-status`, `interloan-status`, `search-books`).
-- For write operations (`interloan-request`, `hope-book-request`), require explicit submit flags:
-  - `--submit --allow-submit`
-- Keep credentials/session in `~/.config/snlib-cli/`.
-
 ## Troubleshooting
-
-If `clojure` is missing, install Clojure CLI first.
 
 If authentication fails:
 
 1. Run `./scripts/snlib login --pretty`
-2. Re-check `~/.config/snlib-cli/credentials.edn`
-3. Re-run target command
+2. Check `~/.config/snlib-cli/credentials.edn`
+3. Retry your target command
 
-If artifact resolution fails, verify GAV/version and repository access.
-
-## References
-
-Read `references/commands.md` for command patterns and common flows.
+If artifact resolution fails, verify artifact coordinates/version and network/repository access.
