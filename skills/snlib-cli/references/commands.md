@@ -43,9 +43,7 @@
 
 ```bash
 ./scripts/snlib-cli hope-book-request \
-  --book-info title="도서명" \
-  --book-info author="저자" \
-  --applicant-info remark="신청 사유" \
+  --request-edn '{:title "도서명" :author "저자" :publisher "출판사" :publishYear "2025" :eaIsbn "9788966264896" :price "54000" :email "user@example.com" :smsReceiptYn "Y" :handPhone "010-1234-5678"}' \
   --submit --allow-submit --pretty
 ```
 

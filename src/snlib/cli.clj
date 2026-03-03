@@ -21,13 +21,6 @@
 (def ^:private login-session-ttl-ms
   (* 3 60 60 1000))
 
-(def ^:private default-cli-base-url "https://snlib.go.kr")
-(def ^:private default-cli-timeout-ms 20000)
-(def ^:private default-cli-user-agent "Mozilla/5.0 snlib-lib")
-(def ^:private default-login-return-url "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
-(def ^:private default-hope-book-page-path "/intro/menu/10045/program/30011/hopeBookApply.do")
-(def ^:private default-hope-book-submit-path "/intro/menu/10045/program/30011/hopeBookApplyProc.do")
-
 (defn- now-ms
   []
   (System/currentTimeMillis))
@@ -166,143 +159,58 @@
                       {:label label
                        :value s})))))
 
-(defn- parse-kv
+(defn- parse-edn-map
   [label s]
-  (let [[k v] (str/split (or s "") #"=" 2)]
-    (if (and (not (str/blank? k))
-             (some? v))
-      [(keyword (str/trim k)) (str/trim v)]
-      (throw (ex-info (str "Expected KEY=VALUE for " label ": " s)
+  (try
+    (let [parsed (edn/read-string s)]
+      (if (map? parsed)
+        parsed
+        (throw (ex-info (str "Expected EDN map for " label ": " s)
+                        {:label label
+                         :value s}))))
+    (catch clojure.lang.ExceptionInfo e
+      (throw e))
+    (catch Exception e
+      (throw (ex-info (str "Failed to parse EDN for " label ": " s)
                       {:label label
-                       :value s})))))
+                       :value s}
+                      e)))))
 
 (def ^:private cli-options
-  [[nil "--base-url URL" (str "SNLib base URL (default: " default-cli-base-url ")")]
-   [nil "--timeout-ms MS" (str "Request timeout (ms, default: " default-cli-timeout-ms ")")
+  [[nil "--base-url URL" "SNLib base URL"]
+   [nil "--timeout-ms MS" "Request timeout (ms)"
     :parse-fn #(parse-int "--timeout-ms" %)]
-   [nil "--user-agent USER_AGENT" (str "HTTP User-Agent (default: " default-cli-user-agent ")")]
+   [nil "--user-agent USER_AGENT" "HTTP User-Agent"]
    [nil "--user-id USER_ID" "Login user ID"]
    [nil "--password PASSWORD" "Login password"]
-   [nil "--return-url RETURN_URL" (str "Encoded login return URL (default: " default-login-return-url ")")]
+   [nil "--return-url RETURN_URL" "Encoded login return URL"]
    [nil "--keyword KEYWORD" "Book search keyword"]
    [nil "--manage-code CODE" "Manage code (for search-books/interloan, ex: MA, MB, MS)"]
    [nil "--library-code CODE" "[Deprecated] Alias of --manage-code for search-books"
     :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
-   [nil "--page PAGE" "Search page (default: 1)"
+   [nil "--page PAGE" "Search page"
     :parse-fn #(parse-int "--page" %)]
-   [nil "--per-page N" "Items per page (default: 10)"
+   [nil "--per-page N" "Items per page"
     :parse-fn #(parse-int "--per-page" %)]
    [nil "--sort SORT" "Search sort key (default: SIMILAR)"]
    [nil "--order ORDER" "Search order (default: DESC)"]
-   [nil "--include-history" "Include returned loans in loan-status (default: false)"]
+   [nil "--include-history" "Include returned loans in loan-status"]
    [nil "--save-credentials" "Persist login credentials locally (disabled by default)"]
-   [nil "--submit" "Perform submit action (default: false, otherwise dry run)"]
-   [nil "--allow-submit" "Allow write submit from CLI (default: false)"]
-   [nil "--page-path PATH" (str "Override hope-book page path (default: " default-hope-book-page-path ")")]
-   [nil "--submit-path PATH" (str "Override submit path (default fallback: " default-hope-book-submit-path ")")]
+   [nil "--submit" "Perform submit action (otherwise dry run)"]
+   [nil "--allow-submit" "Allow write submit from CLI"]
+   [nil "--page-path PATH" "Override hope-book page path"]
+   [nil "--submit-path PATH" "Override submit path"]
    [nil "--reg-no REG_NO" "Interloan registration number"]
    [nil "--apl-lib-code CODE" "Applicant library code (6-digit numeric, see data/lib-code.edn)"]
    [nil "--give-lib-code CODE" "Giving library code (6-digit numeric, usually auto-filled from popup)"]
    [nil "--user-key USER_KEY" "Interloan user key"]
-   [nil "--appendix-apply-yn YN" "Interloan appendix apply flag (default: N)"]
-   [nil "--book-info KEY=VALUE" "Hope-book book field (repeatable)"
-    :parse-fn #(parse-kv "--book-info" %)
-    :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
-   [nil "--applicant-info KEY=VALUE" "Hope-book applicant field (repeatable)"
-    :parse-fn #(parse-kv "--applicant-info" %)
-    :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
+   [nil "--appendix-apply-yn YN" "Interloan appendix apply flag"]
+   [nil "--request-edn EDN" "Hope-book request payload as a single EDN map"
+    :parse-fn #(parse-edn-map "--request-edn" %)]
    [nil "--rec-key KEY" "Hope-book detail rec-key"]
-   [nil "--group-key KEY" "Basket group key (default: first parsed basket group)"]
+   [nil "--group-key KEY" "Basket group key"]
    [nil "--pretty" "Pretty-print EDN output"]
    [nil "--help" "Show help"]])
-
-(def ^:private command-help
-  {"login"
-   ["--user-id USER_ID (required unless saved credentials exist)"
-    "--password PASSWORD (required unless saved credentials exist)"
-    (str "--return-url RETURN_URL (default: " default-login-return-url ")")
-    "--save-credentials (default: false)"]
-
-   "search-books"
-   ["--keyword KEYWORD (required)"
-    "--manage-code CODE (optional, repeatable)"
-    "--library-code CODE ([Deprecated], alias of --manage-code)"
-    "--page PAGE (default: 1)"
-    "--per-page N (default: 10)"
-    "--sort SORT (default: SIMILAR)"
-    "--order ORDER (default: DESC)"]
-
-   "loan-status"
-   ["--include-history (default: false)"]
-
-   "hope-book-request"
-   ["--book-info KEY=VALUE (optional, repeatable)"
-    "--applicant-info KEY=VALUE (optional, repeatable)"
-    "--submit (default: false)"
-    "--allow-submit (default: false)"
-    (str "--page-path PATH (default: " default-hope-book-page-path ")")
-    (str "--submit-path PATH (default fallback: " default-hope-book-submit-path ")")]
-
-   "interlibrary-loan-request"
-   ["--manage-code CODE (required)"
-    "--reg-no REG_NO (required)"
-    "--apl-lib-code CODE (required when --submit)"
-    "--give-lib-code CODE (optional, usually auto-filled)"
-    "--user-key USER_KEY (optional, usually auto-filled)"
-    "--appendix-apply-yn YN (default: N)"
-    "--submit (default: false)"
-    "--allow-submit (default: false)"]
-
-   "interloan-request"
-   ["Same options as interlibrary-loan-request"]
-
-   "my-info"
-   ["(no command-specific options)"]
-
-   "loan-history"
-   ["(no command-specific options)"]
-
-   "reservation-status"
-   ["(no command-specific options)"]
-
-   "interloan-status"
-   ["(no command-specific options)"]
-
-   "hope-book-list"
-   ["(no command-specific options)"]
-
-   "hope-book-detail"
-   ["--rec-key KEY (required)"]
-
-   "basket-list"
-   ["--group-key KEY (optional; default: first parsed basket group)"]})
-
-(def ^:private command-order
-  ["login"
-   "search-books"
-   "loan-status"
-   "hope-book-request"
-   "interlibrary-loan-request"
-   "interloan-request"
-   "my-info"
-   "loan-history"
-   "reservation-status"
-   "interloan-status"
-   "hope-book-list"
-   "hope-book-detail"
-   "basket-list"])
-
-(defn- command-help-section
-  []
-  (str/join
-    "\n"
-    (mapcat
-      (fn [command]
-        (let [lines (get command-help command [])]
-          (concat [(str "  " command)]
-                  (map #(str "    " %) lines)
-                  [""])))
-      command-order)))
 
 (defn- usage
   [summary]
@@ -323,8 +231,6 @@
        "  hope-book-list\n"
        "  hope-book-detail\n"
        "  basket-list\n\n"
-       "Command options:\n"
-       (command-help-section) "\n"
        "Long options:\n"
        summary "\n\n"
        "Examples:\n"
@@ -332,6 +238,7 @@
        "  snlib search-books --keyword franklin --manage-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
        "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code 141484\n"
+       "  snlib hope-book-request --request-edn '{:title \"도서명\" :author \"저자\" :handPhone \"010-1234-5678\" :email \"user@example.com\"}' --submit --allow-submit\n"
        "  snlib my-info\n"
        "  snlib hope-book-detail --rec-key 1938103961\n"
        "  snlib basket-list --group-key 13840"))
@@ -364,8 +271,7 @@
     (-> (select-keys opts [:page-path :submit-path])
         (assoc :submit? (boolean (:submit opts))
                :allow-submit? (boolean (:allow-submit opts))
-               :book-info (into {} (:book-info opts))
-               :applicant-info (into {} (:applicant-info opts))))
+               :request (or (:request-edn opts) {})))
 
     "interlibrary-loan-request"
     (-> (select-keys opts [:manage-code :reg-no :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])

@@ -416,16 +416,14 @@
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
-        (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                  :author "홍길동"
-                                                                  :publisher "테스트출판"
-                                                                  :publish-year 2024
-                                                                  :ea-isbn "9781234567890"}
-                                                      :applicant-info {:email "tester@example.com"
-                                                                       :sms-receipt-yn "Y"
-                                                                       :mobile-no1 "010"
-                                                                       :mobile-no2 "1234"
-                                                                       :mobile-no3 "5678"}})]
+        (let [result (core/hope-book-request! client {:request {:title "테스트 도서"
+                                                                :author "홍길동"
+                                                                :publisher "테스트출판"
+                                                                :publish-year 2024
+                                                                :ea-isbn "9781234567890"
+                                                                :email "tester@example.com"
+                                                                :sms-receipt-yn "Y"
+                                                                :hand-phone "010-1234-5678"}})]
           (is (true? (:ok? result)))
           (is (= :ok (:status result)))
           (is (= 1 (count @calls)))
@@ -437,7 +435,10 @@
           (is (= "테스트출판" (get-in result [:data :prepared-payload "publisher"])))
           (is (= "2024" (get-in result [:data :prepared-payload "publishYear"])))
           (is (= "Y" (get-in result [:data :prepared-payload "smsReceiptYn"])))
-          (is (= "010" (get-in result [:data :prepared-payload "mobileNo1"]))))))))
+          (is (= "010-1234-5678" (get-in result [:data :prepared-payload "handPhone"])))
+          (is (= "010" (get-in result [:data :prepared-payload "mobileNo1"])))
+          (is (= "1234" (get-in result [:data :prepared-payload "mobileNo2"])))
+          (is (= "5678" (get-in result [:data :prepared-payload "mobileNo3"]))))))))
 
 (deftest hope-book-request-blocks-submit-by-default
   (let [client (core/create-client)
@@ -451,8 +452,8 @@
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
-        (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                  :author "홍길동"}
+        (let [result (core/hope-book-request! client {:request {:title "테스트 도서"
+                                                                :author "홍길동"}
                                                       :submit? true})]
           (is (= false (:ok? result)))
           (is (= :blocked (:status result)))
@@ -461,6 +462,27 @@
           (is (= :write-blocked (get-in result [:error :code])))
           (is (= 1 (count @calls)))
           (is (= :get (:method (first @calls)))))))))
+
+(deftest hope-book-request-derives-handphone-from-mobile-parts
+  (let [client (core/create-client)
+        html (str
+               "<form id='registForm' name='registForm' method='post'>"
+               "<input type='hidden' name='manageCode' value='MS'/>"
+               "<input type='text' name='title' value=''/>"
+               "<input type='text' name='author' value=''/>"
+               "</form>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [_calls]
+        (let [result (core/hope-book-request! client {:request {:title "테스트 도서"
+                                                                :author "홍길동"
+                                                                :mobile-no1 "010"
+                                                                :mobile-no2 "3764"
+                                                                :mobile-no3 "0262"}})]
+          (is (= "010-1234-5678" (get-in result [:data :prepared-payload "handPhone"])))
+          (is (= "010" (get-in result [:data :prepared-payload "mobileNo1"])))
+          (is (= "3764" (get-in result [:data :prepared-payload "mobileNo2"])))
+          (is (= "0262" (get-in result [:data :prepared-payload "mobileNo3"]))))))))
 
 (deftest hope-book-request-submit-uses-har-contract-when-allowed
   (let [client (core/create-client)
@@ -477,11 +499,12 @@
         :headers {"location" "/intro/main/index.do"}
         :body "<html><head><title>희망도서 신청 완료</title></head><body></body></html>"}]
       (fn [calls]
-        (let [result (core/hope-book-request! client {:book-info {:title "클린 코드"
-                                                                  :author "Robert C. Martin"
-                                                                  :price 32000}
-                                                      :applicant-info {:email "tester@example.com"
-                                                                       :sms-receipt-yn "Y"}
+        (let [result (core/hope-book-request! client {:request {:title "클린 코드"
+                                                                :author "Robert C. Martin"
+                                                                :price 32000
+                                                                :email "tester@example.com"
+                                                                :sms-receipt-yn "Y"
+                                                                :handPhone "010-1234-5678"}
                                                       :submit? true
                                                       :allow-submit? true})]
           (is (true? (:ok? result)))
@@ -495,6 +518,8 @@
           (is (= "클린 코드" (get-in (second @calls) [:form-params "title"])))
           (is (= "32000" (get-in (second @calls) [:form-params "price"])))
           (is (= "Y" (get-in (second @calls) [:form-params "smsReceiptYn"])))
+          (is (= "010-1234-5678" (get-in (second @calls) [:form-params "handPhone"])))
+          (is (= "3764" (get-in (second @calls) [:form-params "mobileNo2"])))
           (is (= "https://snlib.go.kr/intro/menu/10045/program/30011/hopeBookApply.do"
                  (get-in (second @calls) [:headers "Referer"]))))))))
 
@@ -843,7 +868,7 @@
     (with-request-stub
       [{:status 503 :headers {} :body "maintenance"}]
       (fn [_calls]
-        (let [result (core/hope-book-request! client {:book-info {:title "a" :author "b"}})]
+        (let [result (core/hope-book-request! client {:request {:title "a" :author "b"}})]
           (is (= false (:ok? result)))
           (is (= :remote-error (:status result)))
           (is (= :hope-book-page-request-failed (get-in result [:error :code]))))))))
@@ -862,8 +887,8 @@
         :headers {"content-type" "text/html"}
         :body "<script>alert('희망도서 신청 실패');</script>"}]
       (fn [_calls]
-        (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                  :author "홍길동"}
+        (let [result (core/hope-book-request! client {:request {:title "테스트 도서"
+                                                                :author "홍길동"}
                                                       :submit? true
                                                       :allow-submit? true})]
           (is (= false (:ok? result)))
@@ -892,7 +917,7 @@
               [[core/login! {:user-id "alice" :password "secret"}]
                [core/search-books! {:keyword "테스트"}]
                [core/loan-status! {}]
-               [core/hope-book-request! {:book-info {:title "a" :author "b"}}]
+               [core/hope-book-request! {:request {:title "a" :author "b"}}]
                [core/interlibrary-loan-request! {:manage-code "MB" :reg-no "R1"}]
                [core/my-info! {}]
                [core/loan-history! {}]
