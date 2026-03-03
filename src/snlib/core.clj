@@ -66,24 +66,15 @@
       (str/starts-with? path-or-url "http") path-or-url
       :else (str base-url path-or-url))))
 
-(defn- request
-  [client {:keys [method url query-params form-params headers]
-           :or {method :get headers {}}}]
-  (let [{:keys [timeout-ms user-agent cookie-store]} @client
-        base-opts {:throw-exceptions false
-                   :as :text
-                   :socket-timeout timeout-ms
-                   :conn-timeout timeout-ms
-                   :cookie-store cookie-store
-                   :headers (merge {"User-Agent" user-agent}
-                                   headers)}
-        opts (cond-> base-opts
-               query-params (assoc :query-params query-params)
-               form-params (assoc :form-params form-params
-                                  :content-type :x-www-form-urlencoded))]
-    ((if (= method :post) http/post http/get)
-     (absolute-url client url)
-     opts)))
+(defn- default-request-opts
+  [client]
+  (let [{:keys [timeout-ms user-agent cookie-store]} @client]
+    {:throw-exceptions false
+     :as :text
+     :socket-timeout timeout-ms
+     :conn-timeout timeout-ms
+     :cookie-store cookie-store
+     :headers {"User-Agent" user-agent}}))
 
 (defn- missing-input
   [{:keys [user-id password]}]
@@ -111,26 +102,34 @@
                       :missing-required-input
                       (str "Missing required input: " (str/join ", " (map name missing))))
       (try
-        (request client {:method :get :url login-page-path})
-        (request client {:method :post
-                         :url login-submit-path
-                         :form-params {"returnUrl" (or return-url "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
-                                       "userId" user-id
-                                       "password" password}
-                         :headers {"Referer" (absolute-url client login-page-path)}})
-        (let [verify-res (request client {:method :get
-                                          :url loan-status-path
-                                          :headers {"Referer" (absolute-url client login-page-path)}})
+        (let [default-opts (default-request-opts client)]
+          (http/request (merge default-opts
+                               {:method :get
+                                :url (absolute-url client login-page-path)}))
+          (http/request (merge default-opts
+                               {:method :post
+                                :url (absolute-url client login-submit-path)
+                                :content-type :x-www-form-urlencoded
+                                :form-params {"returnUrl" (or return-url "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
+                                              "userId" user-id
+                                              "password" password}
+                                :headers (merge (:headers default-opts)
+                                                {"Referer" (absolute-url client login-page-path)})}))
+          (let [verify-res (http/request (merge default-opts
+                                                {:method :get
+                                                 :url (absolute-url client loan-status-path)
+                                                 :headers (merge (:headers default-opts)
+                                                                 {"Referer" (absolute-url client login-page-path)})}))
               authenticated? (and (= 200 (:status verify-res))
                                   (not (logged-out-page? (:body verify-res))))
               status (if authenticated? :ok :requires-login)]
-          (swap! client assoc :last-login {:ok? authenticated?
-                                           :user-id user-id})
-          {:ok? authenticated?
-           :status status
-           :data {:authenticated? authenticated?
-                  :user-id user-id}
-           :error nil})
+            (swap! client assoc :last-login {:ok? authenticated?
+                                             :user-id user-id})
+            {:ok? authenticated?
+             :status status
+             :data {:authenticated? authenticated?
+                    :user-id user-id}
+             :error nil}))
         (catch Exception e
           (swap! client assoc :last-login {:ok? false
                                            :user-id user-id})
@@ -275,11 +274,14 @@
                     :missing-required-input
                     "Missing required input: keyword")
     (try
-      (let [query-params (build-search-query opts)
-            res (request client {:method :get
-                                 :url search-path
-                                 :query-params query-params
-                                 :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+      (let [default-opts (default-request-opts client)
+            query-params (build-search-query opts)
+            res (http/request (merge default-opts
+                                     {:method :get
+                                      :url (absolute-url client search-path)
+                                      :query-params query-params
+                                      :headers (merge (:headers default-opts)
+                                                      {"Referer" (absolute-url client "/intro/main/index.do")})}))
             status-code (:status res)]
         (if (= 200 status-code)
           (let [items (parse-search-items (:body res))
@@ -425,10 +427,12 @@
 (defn loan-status!
   [client {:keys [include-history?]}]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url loan-status-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client loan-status-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -618,11 +622,13 @@
    {:keys [book-info applicant-info submit? page-path submit-path]
     :as opts}]
   (try
-    (let [resolved-page-path (or page-path default-hope-book-page-path)
-          page-res (request client
-                            {:method :get
-                             :url resolved-page-path
-                             :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          resolved-page-path (or page-path default-hope-book-page-path)
+          page-res (http/request (merge default-opts
+                                        {:method :get
+                                         :url (absolute-url client resolved-page-path)
+                                         :headers (merge (:headers default-opts)
+                                                         {"Referer" (absolute-url client "/intro/main/index.do")})}))
           page-status (:status page-res)
           page-html (:body page-res)
           page-logged-out? (logged-out-page? page-html)
@@ -666,11 +672,13 @@
                  :message "Set :allow-submit? true or env SNLIB_ALLOW_HOPE_BOOK_SUBMIT=1 to submit."}}
 
         :else
-        (let [submit-res (request client
-                                  {:method :post
-                                   :url resolved-submit-path
-                                   :form-params prepared-payload
-                                   :headers {"Referer" (absolute-url client resolved-page-path)}})
+        (let [submit-res (http/request (merge default-opts
+                                              {:method :post
+                                               :url (absolute-url client resolved-submit-path)
+                                               :content-type :x-www-form-urlencoded
+                                               :form-params prepared-payload
+                                               :headers (merge (:headers default-opts)
+                                                               {"Referer" (absolute-url client resolved-page-path)})}))
               submit-body (or (:body submit-res) "")
               status-code (:status submit-res)
               result-message (or (parse-hope-book-result-message submit-body)
@@ -809,12 +817,14 @@
                         :invalid-input-format
                         (str "Invalid input format: " (str/join ", " (map name invalid))))
         (try
-          (let [popup-res (request client
-                                   {:method :get
-                                    :url interloan-popup-path
-                                    :query-params {"manageCode" manage-code
-                                                   "regNo" reg-no}
-                                    :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+          (let [default-opts (default-request-opts client)
+                popup-res (http/request (merge default-opts
+                                               {:method :get
+                                                :url (absolute-url client interloan-popup-path)
+                                                :query-params {"manageCode" manage-code
+                                                               "regNo" reg-no}
+                                                :headers (merge (:headers default-opts)
+                                                                {"Referer" (absolute-url client "/intro/main/index.do")})}))
                 popup-status (:status popup-res)
                 popup-html (:body popup-res)
                 popup-values (parse-interloan-popup-values popup-html)
@@ -874,14 +884,16 @@
                        :message "Set :allow-submit? true or env SNLIB_ALLOW_INTERLOAN_SUBMIT=1 to submit."}}
 
               :else
-              (let [submit-res (request client
-                                        {:method :post
-                                         :url interloan-submit-path
-                                         :form-params prepared-payload
-                                         :headers {"Origin" (:base-url @client)
-                                                   "Referer" (str (absolute-url client interloan-popup-path)
-                                                                  "?manageCode=" manage-code
-                                                                  "&regNo=" reg-no)}})
+              (let [submit-res (http/request (merge default-opts
+                                                    {:method :post
+                                                     :url (absolute-url client interloan-submit-path)
+                                                     :content-type :x-www-form-urlencoded
+                                                     :form-params prepared-payload
+                                                     :headers (merge (:headers default-opts)
+                                                                     {"Origin" (:base-url @client)
+                                                                      "Referer" (str (absolute-url client interloan-popup-path)
+                                                                                     "?manageCode=" manage-code
+                                                                                     "&regNo=" reg-no)})}))
                     status-code (:status submit-res)
                     result-message (parse-interloan-result-message (:body submit-res))
                     success? (and (= 200 status-code)
@@ -941,10 +953,12 @@
 (defn my-info!
   [client _opts]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url my-info-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client my-info-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -1027,10 +1041,12 @@
 (defn loan-history!
   [client _opts]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url loan-history-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client loan-history-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -1085,10 +1101,12 @@
 (defn reservation-status!
   [client _opts]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url reservation-status-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client reservation-status-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -1149,10 +1167,12 @@
 (defn interloan-status!
   [client _opts]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url interloan-status-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client interloan-status-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -1209,10 +1229,12 @@
 (defn hope-book-list!
   [client _opts]
   (try
-    (let [res (request client
-                       {:method :get
-                        :url hope-book-list-path
-                        :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          res (http/request (merge default-opts
+                                   {:method :get
+                                    :url (absolute-url client hope-book-list-path)
+                                    :headers (merge (:headers default-opts)
+                                                    {"Referer" (absolute-url client "/intro/main/index.do")})}))
           status-code (:status res)
           html (:body res)]
       (cond
@@ -1277,11 +1299,13 @@
                     :missing-required-input
                     "Missing required input: rec-key")
     (try
-      (let [res (request client
-                         {:method :get
-                          :url hope-book-detail-path
-                          :query-params {"recKey" rec-key}
-                          :headers {"Referer" (absolute-url client hope-book-list-path)}})
+      (let [default-opts (default-request-opts client)
+            res (http/request (merge default-opts
+                                     {:method :get
+                                      :url (absolute-url client hope-book-detail-path)
+                                      :query-params {"recKey" rec-key}
+                                      :headers (merge (:headers default-opts)
+                                                      {"Referer" (absolute-url client hope-book-list-path)})}))
             status-code (:status res)
             html (:body res)]
         (cond
@@ -1354,10 +1378,12 @@
 (defn basket-list!
   [client {:keys [group-key]}]
   (try
-    (let [main-res (request client
-                            {:method :get
-                             :url basket-group-main-path
-                             :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
+    (let [default-opts (default-request-opts client)
+          main-res (http/request (merge default-opts
+                                        {:method :get
+                                         :url (absolute-url client basket-group-main-path)
+                                         :headers (merge (:headers default-opts)
+                                                         {"Referer" (absolute-url client "/intro/main/index.do")})}))
           main-status (:status main-res)
           main-html (:body main-res)]
       (cond
@@ -1372,14 +1398,16 @@
         (let [resolved-group-key (or group-key (parse-basket-group-key main-html))
               group-info (parse-basket-group-info main-html)
               book-res (when resolved-group-key
-                         (request client
-                                  {:method :post
-                                   :url basket-group-book-list-path
-                                   :form-params {"searchGroupKey" resolved-group-key
-                                                 "searchLibrary" "ALL"
-                                                 "searchKey" "TITLE"
-                                                 "searchValue" ""}
-                                   :headers {"Referer" (absolute-url client basket-group-main-path)}}))
+                         (http/request (merge default-opts
+                                              {:method :post
+                                               :url (absolute-url client basket-group-book-list-path)
+                                               :content-type :x-www-form-urlencoded
+                                               :form-params {"searchGroupKey" resolved-group-key
+                                                             "searchLibrary" "ALL"
+                                                             "searchKey" "TITLE"
+                                                             "searchValue" ""}
+                                               :headers (merge (:headers default-opts)
+                                                               {"Referer" (absolute-url client basket-group-main-path)})})))
               book-status (:status book-res)
               book-html (:body book-res)]
           (cond

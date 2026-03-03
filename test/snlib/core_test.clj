@@ -1,5 +1,6 @@
 (ns snlib.core-test
   (:require
+   [clj-http.client]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [snlib.core :as core]))
@@ -8,11 +9,16 @@
   [responses f]
   (let [calls (atom [])
         queue (atom (vec responses))
-        request-var (ns-resolve 'snlib.core 'request)]
+        request-var (ns-resolve 'clj-http.client 'request)]
     (with-redefs-fn
       {request-var
-       (fn [_client req]
-         (swap! calls conj req)
+       (fn [req]
+         (let [normalized-req (update req :url
+                                      (fn [url]
+                                        (if (str/starts-with? (or url "") "http")
+                                          (.getPath (java.net.URI. url))
+                                          url)))]
+           (swap! calls conj normalized-req))
          (if-let [resp (first @queue)]
            (do
              (swap! queue subvec 1)
@@ -881,7 +887,7 @@
 (deftest core-apis-return-http-request-failed-on-request-exception
   (let [client (core/create-client)
         ex (ex-info "boom" {})]
-    (with-redefs [snlib.core/request (fn [_client _req] (throw ex))]
+    (with-redefs [clj-http.client/request (fn [_req] (throw ex))]
       (doseq [[f opts]
               [[core/login! {:user-id "alice" :password "secret"}]
                [core/search-books! {:keyword "테스트"}]
