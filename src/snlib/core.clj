@@ -88,20 +88,20 @@
 (defn- missing-input
   [{:keys [user-id password]}]
   (vec
-   (concat
-    (when (str/blank? (or user-id "")) [:user-id])
-    (when (str/blank? (or password "")) [:password]))))
+    (concat
+      (when (str/blank? (or user-id "")) [:user-id])
+      (when (str/blank? (or password "")) [:password]))))
 
 (defn- logged-out-page?
   [html]
   (let [body (or html "")]
     (boolean
-     (or (str/includes? body "location.href='/intro/memberLogin.do'")
-         (str/includes? body "로그인 후 이용가능합니다")
-         (re-find #"(?is)<form[^>]+id=\"redirectForm\"[^>]*action=\"/intro/menu/10068/program/30025/memberLogin\.do\""
-                  body)
-         (re-find #"(?is)var\s+frm\s*=\s*document\.redirectForm.*?frm\.submit\(\)"
-                  body)))))
+      (or (str/includes? body "location.href='/intro/memberLogin.do'")
+          (str/includes? body "로그인 후 이용가능합니다")
+          (re-find #"(?is)<form[^>]+id=\"redirectForm\"[^>]*action=\"/intro/menu/10068/program/30025/memberLogin\.do\""
+                   body)
+          (re-find #"(?is)var\s+frm\s*=\s*document\.redirectForm.*?frm\.submit\(\)"
+                   body)))))
 
 (defn login!
   [client {:keys [user-id password return-url]}]
@@ -144,19 +144,19 @@
     (Integer/parseInt (str v))
     (catch Exception _ nil)))
 
-(defn- normalize-library-codes
-  [library-code]
+(defn- normalize-manage-codes
+  [manage-code]
   (->> (cond
-         (nil? library-code) []
-         (sequential? library-code) library-code
-         :else [library-code])
+         (nil? manage-code) []
+         (sequential? manage-code) manage-code
+         :else [manage-code])
        (map #(some-> % str str/trim))
        (remove str/blank?)
        vec))
 
 (defn- build-search-query
-  [{:keys [keyword library-code page per-page sort order]}]
-  (let [library-codes (normalize-library-codes library-code)
+  [{:keys [keyword manage-code library-code page per-page sort order]}]
+  (let [manage-codes (normalize-manage-codes (or manage-code library-code))
         query {"searchType" "SIMPLE"
                "searchMenuCollectionCategory" ""
                "searchMenuEBookCategory" ""
@@ -193,10 +193,12 @@
                "searchRecordCount" (str (or per-page 10))
                "searchBookClass" "ALL"}]
     (cond-> query
-      (seq library-codes)
-      (assoc "searchLibraryArr" (if (= 1 (count library-codes))
-                                  (first library-codes)
-                                  library-codes)))))
+      (seq manage-codes)
+      ;; NOTE: Server contract uses searchLibraryArr, and this CLI/library fills it with
+      ;; manage-code values (ex: MA, MB, MS).
+      (assoc "searchLibraryArr" (if (= 1 (count manage-codes))
+                                  (first manage-codes)
+                                  manage-codes)))))
 
 (defn- split-colon-value
   [s]
@@ -210,18 +212,18 @@
 (defn- parse-author-meta
   [^Element item]
   (reduce
-   (fn [acc ^Element span]
-     (let [text (str/trim (.text span))
-           value (split-colon-value text)]
-       (cond
-         (and value (str/starts-with? text "저자")) (assoc acc :author value)
-         (and value (str/starts-with? text "발행자")) (assoc acc :publisher value)
-         (and value (str/starts-with? text "발행연도")) (assoc acc :publish-year value)
-         :else acc)))
-   {:author nil
-    :publisher nil
-    :publish-year nil}
-   (.select item "dd.author span")))
+    (fn [acc ^Element span]
+      (let [text (str/trim (.text span))
+            value (split-colon-value text)]
+        (cond
+          (and value (str/starts-with? text "저자")) (assoc acc :author value)
+          (and value (str/starts-with? text "발행자")) (assoc acc :publisher value)
+          (and value (str/starts-with? text "발행연도")) (assoc acc :publish-year value)
+          :else acc)))
+    {:author nil
+     :publisher nil
+     :publish-year nil}
+    (.select item "dd.author span")))
 
 (defn- parse-manage-and-reg-no
   [^Element item]
@@ -342,14 +344,14 @@
 (defn- loan-header-indexes
   [headers]
   (reduce
-   (fn [acc [idx header]]
-     (if-let [k (loan-header-key header)]
-       (if (contains? acc k)
-         acc
-         (assoc acc k idx))
-       acc))
-   {}
-   (map-indexed vector headers)))
+    (fn [acc [idx header]]
+      (if-let [k (loan-header-key header)]
+        (if (contains? acc k)
+          acc
+          (assoc acc k idx))
+        acc))
+    {}
+    (map-indexed vector headers)))
 
 (defn- parse-renewable?
   [value]
@@ -675,14 +677,14 @@
                                  (parse-hope-book-result-message page-html))
               logged-out? (logged-out-page? submit-body)
               success-signal? (boolean
-                               (or (re-find hope-book-submit-success-pattern submit-body)
-                                   (some->> result-message
-                                            (re-find hope-book-submit-success-pattern))))
+                                (or (re-find hope-book-submit-success-pattern submit-body)
+                                    (some->> result-message
+                                             (re-find hope-book-submit-success-pattern))))
               failure-signal? (boolean
-                               (or logged-out?
-                                   (re-find hope-book-submit-failure-pattern submit-body)
-                                   (some->> result-message
-                                            (re-find hope-book-submit-failure-pattern))))
+                                (or logged-out?
+                                    (re-find hope-book-submit-failure-pattern submit-body)
+                                    (some->> result-message
+                                             (re-find hope-book-submit-failure-pattern))))
               success? (and (<= 200 status-code 399)
                             (not failure-signal?)
                             (or success-signal?
@@ -715,12 +717,12 @@
 (defn- missing-interloan-input
   [{:keys [manage-code reg-no apl-lib-code submit?]}]
   (vec
-   (concat
-    (when (str/blank? (or manage-code "")) [:manage-code])
-    (when (str/blank? (or reg-no "")) [:reg-no])
-    (when submit?
-      (when (str/blank? (or apl-lib-code ""))
-        [:apl-lib-code])))))
+    (concat
+      (when (str/blank? (or manage-code "")) [:manage-code])
+      (when (str/blank? (or reg-no "")) [:reg-no])
+      (when submit?
+        (when (str/blank? (or apl-lib-code ""))
+          [:apl-lib-code])))))
 
 (defn- invalid-interloan-input
   [opts]
@@ -729,9 +731,9 @@
 (defn- missing-interloan-popup-values
   [{:keys [give-lib-code user-key]}]
   (vec
-   (concat
-    (when (str/blank? (or give-lib-code "")) [:give-lib-code])
-    (when (str/blank? (or user-key "")) [:user-key]))))
+    (concat
+      (when (str/blank? (or give-lib-code "")) [:give-lib-code])
+      (when (str/blank? (or user-key "")) [:user-key]))))
 
 (defn- parse-select-value
   [doc field-name]
@@ -788,7 +790,7 @@
   - :apl-lib-code when :submit? is true.
 
   Code guide:
-  - :manage-code is usually a 2-letter uppercase code (ex: "MA", "MB", "MS").
+  - :manage-code is usually a 2-letter uppercase code (ex: `MA`, `MB`, `MS`).
   - :apl-lib-code and :give-lib-code are 6-digit numeric library codes.
   - :apl-lib-code values can be looked up from data/lib-code.edn.
   - :give-lib-code and :user-key are normally derived from the popup response."
@@ -815,8 +817,14 @@
                                     :headers {"Referer" (absolute-url client "/intro/main/index.do")}})
                 popup-status (:status popup-res)
                 popup-html (:body popup-res)
+                popup-values (parse-interloan-popup-values popup-html)
                 merged-opts (codes/normalize-interloan-input
-                             (merge (parse-interloan-popup-values popup-html) normalized-opts))
+                              (merge popup-values
+                                     (into {}
+                                           (remove (fn [[_ v]]
+                                                     (or (nil? v)
+                                                         (and (string? v) (str/blank? v))))
+                                                   normalized-opts))))
                 prepared-payload (build-interloan-payload merged-opts)
                 popup-logged-out? (logged-out-page? popup-html)
                 base-data {:prepared-payload prepared-payload
@@ -918,15 +926,15 @@
           member-type (some-> (.select doc ".myInfo .memType strong") first .text normalize-text)
           items (->> (.select doc ".myInfo .dot-list li")
                      (reduce
-                      (fn [acc ^Element li]
-                        (let [text (.text li)
-                              [label value] (str/split text #"\s*:\s*" 2)
-                              label' (some-> label str/trim)
-                              value' (some-> value str/trim)]
-                          (if-let [k (get my-info-label-key label')]
-                            (assoc acc k value')
-                            acc)))
-                      {}))]
+                       (fn [acc ^Element li]
+                         (let [text (.text li)
+                               [label value] (str/split text #"\s*:\s*" 2)
+                               label' (some-> label str/trim)
+                               value' (some-> value str/trim)]
+                           (if-let [k (get my-info-label-key label')]
+                             (assoc acc k value')
+                             acc)))
+                       {}))]
       (cond-> items
         member-type (assoc :member-type member-type)))))
 
@@ -1254,13 +1262,13 @@
     (let [doc (Jsoup/parse html)]
       (->> (.select doc ".board-view tr")
            (reduce
-            (fn [acc ^Element tr]
-              (let [th (some-> (.select tr "th") first .text normalize-text)
-                    td (some-> (.select tr "td") first .text normalize-text)]
-                (if-let [k (get hope-book-detail-label-key th)]
-                  (assoc acc k (or td ""))
-                  acc)))
-            {})))))
+             (fn [acc ^Element tr]
+               (let [th (some-> (.select tr "th") first .text normalize-text)
+                     td (some-> (.select tr "td") first .text normalize-text)]
+                 (if-let [k (get hope-book-detail-label-key th)]
+                   (assoc acc k (or td ""))
+                   acc)))
+             {})))))
 
 (defn hope-book-detail!
   [client {:keys [rec-key]}]
@@ -1329,8 +1337,8 @@
            (remove #(some-> (.select ^Element % ".emptyNote") first))
            (map (fn [^Element li]
                   (let [title (or (some-> (.select li ".book_name") first .text normalize-text)
-                                 (some-> (.select li "p.title a") first .text normalize-text)
-                                 (some-> (.select li "p.title") first .text normalize-text))
+                                (some-> (.select li "p.title a") first .text normalize-text)
+                                (some-> (.select li "p.title") first .text normalize-text))
                         author (some-> (.select li ".bk_writer") first .text normalize-text)
                         publish (some-> (.select li ".bk_publish") first .text normalize-text)
                         spans (extract-info-spans li)]

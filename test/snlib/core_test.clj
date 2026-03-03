@@ -89,20 +89,20 @@
 (deftest search-books-uses-har-request-contract-and-parses-result
   (let [client (core/create-client)
         html (str
-              "<p class='rtitle'>검색 결과 총 <strong class='themeFC'>657건</strong></p>"
-              "<ul class='resultList imageType'>"
-              "<li>"
-              "<dt class='tit'><a>프랭클린 자서전</a></dt>"
-              "<dd class='author'>"
-              "<span>저자 : Benjamin Franklin 지음</span>"
-              "<span>발행자: 내외신서 ,</span>"
-              "<span>발행연도: 1993</span>"
-              "</dd>"
-              "<div class='stateArea'>"
-              "<a href='#btn' onclick=\"javascript:fnBandLillApplyPop('MA','CEM000050087'); return false;\">상호대차신청</a>"
-              "</div>"
-              "</li>"
-              "</ul>")]
+               "<p class='rtitle'>검색 결과 총 <strong class='themeFC'>657건</strong></p>"
+               "<ul class='resultList imageType'>"
+               "<li>"
+               "<dt class='tit'><a>프랭클린 자서전</a></dt>"
+               "<dd class='author'>"
+               "<span>저자 : Benjamin Franklin 지음</span>"
+               "<span>발행자: 내외신서 ,</span>"
+               "<span>발행연도: 1993</span>"
+               "</dd>"
+               "<div class='stateArea'>"
+               "<a href='#btn' onclick=\"javascript:fnBandLillApplyPop('MA','CEM000050087'); return false;\">상호대차신청</a>"
+               "</div>"
+               "</li>"
+               "</ul>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
@@ -155,16 +155,16 @@
 (deftest search-books-parses-interloan-params-when-link-is-not-first-onclick
   (let [client (core/create-client)
         html (str
-              "<ul class='resultList imageType'>"
-              "<li>"
-              "<dt class='tit'><a>혼모노</a></dt>"
-              "<dd class='author'><span>저자 : 성해나 지음</span></dd>"
-              "<div class='stateArea'>"
-              "<a href='#btn' onclick=\"javascript:fnSearchResultDetail(1,2,'BO'); return false;\">상세</a>"
-              "<a href='#btn' onclick=\"javascript:fnBandLillApplyPop('MA','CEM000903366'); return false;\">상호대차신청</a>"
-              "</div>"
-              "</li>"
-              "</ul>")]
+               "<ul class='resultList imageType'>"
+               "<li>"
+               "<dt class='tit'><a>혼모노</a></dt>"
+               "<dd class='author'><span>저자 : 성해나 지음</span></dd>"
+               "<div class='stateArea'>"
+               "<a href='#btn' onclick=\"javascript:fnSearchResultDetail(1,2,'BO'); return false;\">상세</a>"
+               "<a href='#btn' onclick=\"javascript:fnBandLillApplyPop('MA','CEM000903366'); return false;\">상호대차신청</a>"
+               "</div>"
+               "</li>"
+               "</ul>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [_calls]
@@ -177,15 +177,15 @@
 (deftest loan-status-uses-har-request-contract-and-parses-active-loans
   (let [client (core/create-client)
         html (str
-              "<table class='tbList'>"
-              "<thead><tr>"
-              "<th>번호</th><th>서명</th><th>대출일</th><th>반납예정일</th><th>대출상태</th><th>연장</th>"
-              "</tr></thead>"
-              "<tbody>"
-              "<tr><td>1</td><td>클린 코드</td><td>2026-02-10</td><td>2026-02-24</td><td>대출중</td><td>가능</td></tr>"
-              "<tr><td>2</td><td>리팩터링</td><td>2026-01-01</td><td>2026-01-14</td><td>반납완료</td><td>불가</td></tr>"
-              "</tbody>"
-              "</table>")]
+               "<table class='tbList'>"
+               "<thead><tr>"
+               "<th>번호</th><th>서명</th><th>대출일</th><th>반납예정일</th><th>대출상태</th><th>연장</th>"
+               "</tr></thead>"
+               "<tbody>"
+               "<tr><td>1</td><td>클린 코드</td><td>2026-02-10</td><td>2026-02-24</td><td>대출중</td><td>가능</td></tr>"
+               "<tr><td>2</td><td>리팩터링</td><td>2026-01-01</td><td>2026-01-14</td><td>반납완료</td><td>불가</td></tr>"
+               "</tbody>"
+               "</table>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
@@ -210,13 +210,13 @@
 (deftest loan-status-include-history-returns-all-loans
   (let [client (core/create-client)
         html (str
-              "<table>"
-              "<thead><tr><th>서명</th><th>대출일</th><th>반납예정일</th><th>상태</th><th>연장</th></tr></thead>"
-              "<tbody>"
-              "<tr><td>클린 코드</td><td>2026-02-10</td><td>2026-02-24</td><td>대출중</td><td>Y</td></tr>"
-              "<tr><td>리팩터링</td><td>2026-01-01</td><td>2026-01-14</td><td>반납완료</td><td>N</td></tr>"
-              "</tbody>"
-              "</table>")]
+               "<table>"
+               "<thead><tr><th>서명</th><th>대출일</th><th>반납예정일</th><th>상태</th><th>연장</th></tr></thead>"
+               "<tbody>"
+               "<tr><td>클린 코드</td><td>2026-02-10</td><td>2026-02-24</td><td>대출중</td><td>Y</td></tr>"
+               "<tr><td>리팩터링</td><td>2026-01-01</td><td>2026-01-14</td><td>반납완료</td><td>N</td></tr>"
+               "</tbody>"
+               "</table>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [_calls]
@@ -246,7 +246,7 @@
       [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
-                                                               :reg-no "BEM000133237"})]
+                                                              :reg-no "BEM000133237"})]
           (is (= {:ok? true
                   :status :ok
                   :data {:prepared-payload {"manageCode" "MB"
@@ -273,15 +273,15 @@
       [{:status 200
         :headers {"content-type" "text/html"}
         :body (str
-               "<html><body>"
-               "<input type='hidden' name='giveLibCode' value='141052'/>"
-               "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
-               "</body></html>")}]
+                "<html><body>"
+                "<input type='hidden' name='giveLibCode' value='141052'/>"
+                "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+                "</body></html>")}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
-                                                               :reg-no "BEM000133237"
-                                                               :apl-lib-code "141484"
-                                                               :submit? true})]
+                                                              :reg-no "BEM000133237"
+                                                              :apl-lib-code "141484"
+                                                              :submit? true})]
           (is (= false (:ok? result)))
           (is (= :blocked (:status result)))
           (is (= true (get-in result [:data :submit-attempted?])))
@@ -296,10 +296,10 @@
       [{:status 200
         :headers {"content-type" "text/html"}
         :body (str
-               "<html><body>"
-               "<input type='hidden' name='giveLibCode' value='141052'/>"
-               "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
-               "</body></html>")}
+                "<html><body>"
+                "<input type='hidden' name='giveLibCode' value='141052'/>"
+                "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+                "</body></html>")}
        {:status 200
         :headers {"content-type" "text/html"}
         :body "<html><head><title>상호대차 신청결과</title></head><body>상호대차 신청이 완료되었습니다.</body></html>"}]
@@ -338,8 +338,8 @@
       [{:status 200 :headers {"content-type" "text/html"} :body "<html>unused</html>"}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
-                                                               :reg-no "BEM000133237"
-                                                               :submit? true})]
+                                                              :reg-no "BEM000133237"
+                                                              :submit? true})]
           (is (= {:ok? false
                   :status :invalid-input
                   :data nil
@@ -354,7 +354,7 @@
       [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code " mb "
-                                                               :reg-no "BEM000133237"})]
+                                                              :reg-no "BEM000133237"})]
           (is (true? (:ok? result)))
           (is (= "MB"
                  (get-in (first @calls) [:query-params "manageCode"]))))))))
@@ -365,9 +365,9 @@
       [{:status 200 :headers {"content-type" "text/html"} :body "<html>unused</html>"}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "M1"
-                                                               :reg-no "BEM000133237"
-                                                               :apl-lib-code "14148A"
-                                                               :submit? true})]
+                                                              :reg-no "BEM000133237"
+                                                              :apl-lib-code "14148A"
+                                                              :submit? true})]
           (is (= {:ok? false
                   :status :invalid-input
                   :data nil
@@ -382,9 +382,9 @@
       [{:status 200 :headers {"content-type" "text/html"} :body "<html><body>popup</body></html>"}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
-                                                               :reg-no "BEM000133237"
-                                                               :apl-lib-code "141484"
-                                                               :submit? true})]
+                                                              :reg-no "BEM000133237"
+                                                              :apl-lib-code "141484"
+                                                              :submit? true})]
           (is (= {:ok? false
                   :status :invalid-input
                   :data nil
@@ -397,24 +397,24 @@
 (deftest hope-book-request-prepares-payload-from-page-form
   (let [client (core/create-client)
         html (str
-              "<form id='topSearchForm' method='post'>"
-              "<input type='text' name='searchKeyword' value=''/>"
-              "</form>"
-              "<form id='registForm' name='registForm' method='post'>"
-              "<input type='hidden' name='manageCode' value='MS'/>"
-              "<input type='hidden' name='smsReceiptYn' value='N'/>"
-              "<input type='text' name='title' value=''/>"
-              "<input type='text' name='author' value=''/>"
-              "</form>"
-              "<script>var submitPath='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
+               "<form id='topSearchForm' method='post'>"
+               "<input type='text' name='searchKeyword' value=''/>"
+               "</form>"
+               "<form id='registForm' name='registForm' method='post'>"
+               "<input type='hidden' name='manageCode' value='MS'/>"
+               "<input type='hidden' name='smsReceiptYn' value='N'/>"
+               "<input type='text' name='title' value=''/>"
+               "<input type='text' name='author' value=''/>"
+               "</form>"
+               "<script>var submitPath='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
         (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                   :author "홍길동"
-                                                                   :publisher "테스트출판"
-                                                                   :publish-year 2024
-                                                                   :ea-isbn "9781234567890"}
+                                                                  :author "홍길동"
+                                                                  :publisher "테스트출판"
+                                                                  :publish-year 2024
+                                                                  :ea-isbn "9781234567890"}
                                                       :applicant-info {:email "tester@example.com"
                                                                        :sms-receipt-yn "Y"
                                                                        :mobile-no1 "010"
@@ -436,17 +436,17 @@
 (deftest hope-book-request-blocks-submit-by-default
   (let [client (core/create-client)
         html (str
-              "<form id='registForm' name='registForm' method='post'>"
-              "<input type='hidden' name='manageCode' value='MS'/>"
-              "<input type='text' name='title' value=''/>"
-              "<input type='text' name='author' value=''/>"
-              "</form>"
-              "<script>location.href='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
+               "<form id='registForm' name='registForm' method='post'>"
+               "<input type='hidden' name='manageCode' value='MS'/>"
+               "<input type='text' name='title' value=''/>"
+               "<input type='text' name='author' value=''/>"
+               "</form>"
+               "<script>location.href='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}]
       (fn [calls]
         (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                   :author "홍길동"}
+                                                                  :author "홍길동"}
                                                       :submit? true})]
           (is (= false (:ok? result)))
           (is (= :blocked (:status result)))
@@ -459,12 +459,12 @@
 (deftest hope-book-request-submit-uses-har-contract-when-allowed
   (let [client (core/create-client)
         html (str
-              "<form id='registForm' name='registForm' method='post'>"
-              "<input type='hidden' name='manageCode' value='MS'/>"
-              "<input type='text' name='title' value=''/>"
-              "<input type='text' name='author' value=''/>"
-              "</form>"
-              "<script>var submitPath='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
+               "<form id='registForm' name='registForm' method='post'>"
+               "<input type='hidden' name='manageCode' value='MS'/>"
+               "<input type='text' name='title' value=''/>"
+               "<input type='text' name='author' value=''/>"
+               "</form>"
+               "<script>var submitPath='/intro/menu/10045/program/30011/hopeBookApplyProc.do';</script>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}
        {:status 302
@@ -472,8 +472,8 @@
         :body "<html><head><title>희망도서 신청 완료</title></head><body></body></html>"}]
       (fn [calls]
         (let [result (core/hope-book-request! client {:book-info {:title "클린 코드"
-                                                                   :author "Robert C. Martin"
-                                                                   :price 32000}
+                                                                  :author "Robert C. Martin"
+                                                                  :price 32000}
                                                       :applicant-info {:email "tester@example.com"
                                                                        :sms-receipt-yn "Y"}
                                                       :submit? true
@@ -496,23 +496,23 @@
           ;; my-info
           ;; ---------------------------------------------------------------------------
 
-          (deftest my-info-parses-member-page
-          (let [client (core/create-client)
-          html (str
-             "<div class='myInfo'>"
-             "<div class='memType'><strong class='member typeA themeColor'>정회원</strong></div>"
-             "<div class='myInfoList'><ul class='dot-list'>"
-             "<li>아이디 : testuser</li>"
-             "<li>회원번호 : 12345678</li>"
-             "<li>회원가입일 : 2020-01-01</li>"
-             "<li>개인정보동의 만료일 : 2027-01-01</li>"
-             "<li>휴대폰번호 : 010-1***-5678 (SMS수신)</li>"
-             "<li>이메일주소 : te****@example.com</li>"
-             "</ul></div></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/my-info! client {})]
+(deftest my-info-parses-member-page
+  (let [client (core/create-client)
+        html (str
+               "<div class='myInfo'>"
+               "<div class='memType'><strong class='member typeA themeColor'>정회원</strong></div>"
+               "<div class='myInfoList'><ul class='dot-list'>"
+               "<li>아이디 : testuser</li>"
+               "<li>회원번호 : 12345678</li>"
+               "<li>회원가입일 : 2020-01-01</li>"
+               "<li>개인정보동의 만료일 : 2027-01-01</li>"
+               "<li>휴대폰번호 : 010-1***-5678 (SMS수신)</li>"
+               "<li>이메일주소 : te****@example.com</li>"
+               "</ul></div></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/my-info! client {})]
           (is (true? (:ok? result)))
           (is (= "testuser" (get-in result [:data :user-id])))
           (is (= "12345678" (get-in result [:data :member-no])))
@@ -523,14 +523,14 @@
           (is (= "/intro/menu/10055/program/30017/mypage/myInfo.do"
                 (:url (first @calls)))))))))
 
-          (deftest my-info-detects-logged-out
-          (let [client (core/create-client)]
-          (with-request-stub
-          [{:status 200
-          :headers {"content-type" "text/html"}
-          :body "<script>location.href='/intro/memberLogin.do';</script>"}]
-          (fn [_calls]
-          (let [result (core/my-info! client {})]
+(deftest my-info-detects-logged-out
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200
+        :headers {"content-type" "text/html"}
+        :body "<script>location.href='/intro/memberLogin.do';</script>"}]
+      (fn [_calls]
+        (let [result (core/my-info! client {})]
           (is (= false (:ok? result)))
           (is (= :requires-login (:status result))))))))
 
@@ -538,32 +538,32 @@
           ;; loan-history
           ;; ---------------------------------------------------------------------------
 
-          (deftest loan-history-parses-article-list
-          (let [client (core/create-client)
-          html (str
-             "<div class='boardFilter'><p class='count'>대출이력건수 : <span class='themeFC'>2</span>건</p></div>"
-             "<div class='articleWrap'><ul class='article-list'>"
-             "<li>"
-             "<p class='title'><a href='#'>클린 코드</a></p>"
-             "<p class='info'><span>등록번호 : CEM000001</span> <span>청구기호 : 005-ㅁ123</span></p>"
-             "<p class='info'><span>소장도서관 : 중앙도서관</span> <span>자료실 : [중앙]1층</span></p>"
-             "<p class='info'><span class='status finish'>상태 : <em>반납</em></span> <span>대출일 : 2026.01.01</span> <span>반납일 : 2026.01.15</span></p>"
-             "</li>"
-             "</ul></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/loan-history! client {})]
+(deftest loan-history-parses-article-list
+  (let [client (core/create-client)
+        html (str
+               "<div class='boardFilter'><p class='count'>대출이력건수 : <span class='themeFC'>2</span>건</p></div>"
+               "<div class='articleWrap'><ul class='article-list'>"
+               "<li>"
+               "<p class='title'><a href='#'>클린 코드</a></p>"
+               "<p class='info'><span>등록번호 : CEM000001</span> <span>청구기호 : 005-ㅁ123</span></p>"
+               "<p class='info'><span>소장도서관 : 중앙도서관</span> <span>자료실 : [중앙]1층</span></p>"
+               "<p class='info'><span class='status finish'>상태 : <em>반납</em></span> <span>대출일 : 2026.01.01</span> <span>반납일 : 2026.01.15</span></p>"
+               "</li>"
+               "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/loan-history! client {})]
           (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (is (= 1 (count (get-in result [:data :loans]))))
           (let [loan (first (get-in result [:data :loans]))]
-           (is (= "클린 코드" (:title loan)))
-           (is (= "CEM000001" (:reg-no loan)))
-           (is (= "중앙도서관" (:library loan)))
-           (is (= "반납" (:return-status loan)))
-           (is (= "2026.01.01" (:loan-date loan)))
-           (is (= "2026.01.15" (:return-date loan))))
+            (is (= "클린 코드" (:title loan)))
+            (is (= "CEM000001" (:reg-no loan)))
+            (is (= "중앙도서관" (:library loan)))
+            (is (= "반납" (:return-status loan)))
+            (is (= "2026.01.01" (:loan-date loan)))
+            (is (= "2026.01.15" (:return-date loan))))
           (is (= 1 (count @calls)))
           (is (= :get (:method (first @calls))))
           (is (= "/intro/menu/10062/program/30021/mypage/loanHistoryList.do"
@@ -573,17 +573,17 @@
           ;; reservation-status
           ;; ---------------------------------------------------------------------------
 
-          (deftest reservation-status-empty-list
-          (let [client (core/create-client)
-          html (str
-             "<div class='boardFilter'><p class='count'>예약현황건수 : <span class='themeFC'>0</span>건</p></div>"
-             "<div class='articleWrap'><ul class='article-list'>"
-             "<li class='emptyNote'>내역이 존재하지 않습니다.</li>"
-             "</ul></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/reservation-status! client {})]
+(deftest reservation-status-empty-list
+  (let [client (core/create-client)
+        html (str
+               "<div class='boardFilter'><p class='count'>예약현황건수 : <span class='themeFC'>0</span>건</p></div>"
+               "<div class='articleWrap'><ul class='article-list'>"
+               "<li class='emptyNote'>내역이 존재하지 않습니다.</li>"
+               "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/reservation-status! client {})]
           (is (true? (:ok? result)))
           (is (= 0 (get-in result [:data :count])))
           (is (= [] (get-in result [:data :reservations])))
@@ -595,31 +595,31 @@
           ;; interloan-status
           ;; ---------------------------------------------------------------------------
 
-          (deftest interloan-status-parses-article-list
-          (let [client (core/create-client)
-          html (str
-             "<div class='boardFilter'><p class='count'>상호대차건수 : <span class='themeFC'>2</span>건</p></div>"
-             "<div class='articleWrap'><ul class='article-list'>"
-             "<li>"
-             "<p class='title'>테스트 도서</p>"
-             "<p class='info'><span>등록번호 : CEM000001</span> <span>청구기호 : 005-ㅌ123</span></p>"
-             "<p class='info'><span>제공도서관 : 중앙도서관 [중앙]1층</span> <span>수령도서관 : 운중도서관</span></p>"
-             "<p class='info'><span class='status ready'>상태 : <em>요청중</em></span> <span>신청일 : 2026.02.28</span> <span>신청자 : 홍길동(hong) </span>"
-             "<a href='#btn' onclick=\"javascript:fnDooraeCancelProc('12345'); return false;\" class='btn small themeBtn'>신청취소</a></p>"
-             "</li>"
-             "</ul></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/interloan-status! client {})]
+(deftest interloan-status-parses-article-list
+  (let [client (core/create-client)
+        html (str
+               "<div class='boardFilter'><p class='count'>상호대차건수 : <span class='themeFC'>2</span>건</p></div>"
+               "<div class='articleWrap'><ul class='article-list'>"
+               "<li>"
+               "<p class='title'>테스트 도서</p>"
+               "<p class='info'><span>등록번호 : CEM000001</span> <span>청구기호 : 005-ㅌ123</span></p>"
+               "<p class='info'><span>제공도서관 : 중앙도서관 [중앙]1층</span> <span>수령도서관 : 운중도서관</span></p>"
+               "<p class='info'><span class='status ready'>상태 : <em>요청중</em></span> <span>신청일 : 2026.02.28</span> <span>신청자 : 홍길동(hong) </span>"
+               "<a href='#btn' onclick=\"javascript:fnDooraeCancelProc('12345'); return false;\" class='btn small themeBtn'>신청취소</a></p>"
+               "</li>"
+               "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/interloan-status! client {})]
           (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (let [req (first (get-in result [:data :requests]))]
-           (is (= "테스트 도서" (:title req)))
-           (is (= "CEM000001" (:reg-no req)))
-           (is (= "요청중" (:status req)))
-           (is (= "12345" (:cancel-key req)))
-           (is (= "운중도서관" (:apl-library req))))
+            (is (= "테스트 도서" (:title req)))
+            (is (= "CEM000001" (:reg-no req)))
+            (is (= "요청중" (:status req)))
+            (is (= "12345" (:cancel-key req)))
+            (is (= "운중도서관" (:apl-library req))))
           (is (= 1 (count @calls)))
           (is (= "/intro/bandLillStatusList.do"
                 (:url (first @calls)))))))))
@@ -628,48 +628,48 @@
           ;; hope-book-list / hope-book-detail
           ;; ---------------------------------------------------------------------------
 
-          (deftest hope-book-list-parses-article-list
-          (let [client (core/create-client)
-          html (str
-             "<div class='boardFilter'><p class='count'>희망도서건수 : <span class='themeFC'>2</span>건</p></div>"
-             "<div class='articleWrap'><ul class='article-list'>"
-             "<li>"
-             "<p class='title'><a href='#link' onclick=\"javascript:hopeBookDetail(12345); return false;\">테스트 도서</a></p>"
-             "<p class='info'><span>도서관 : 운중도서관</span> <span>신청일 : 2025.04.12</span></p>"
-             "<p class='info'><span class='status ready'>상태 : <em>소장중</em></span></p>"
-             "</li>"
-             "</ul></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/hope-book-list! client {})]
+(deftest hope-book-list-parses-article-list
+  (let [client (core/create-client)
+        html (str
+               "<div class='boardFilter'><p class='count'>희망도서건수 : <span class='themeFC'>2</span>건</p></div>"
+               "<div class='articleWrap'><ul class='article-list'>"
+               "<li>"
+               "<p class='title'><a href='#link' onclick=\"javascript:hopeBookDetail(12345); return false;\">테스트 도서</a></p>"
+               "<p class='info'><span>도서관 : 운중도서관</span> <span>신청일 : 2025.04.12</span></p>"
+               "<p class='info'><span class='status ready'>상태 : <em>소장중</em></span></p>"
+               "</li>"
+               "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/hope-book-list! client {})]
           (is (true? (:ok? result)))
           (is (= 2 (get-in result [:data :count])))
           (let [item (first (get-in result [:data :items]))]
-           (is (= "테스트 도서" (:title item)))
-           (is (= "12345" (:rec-key item)))
-           (is (= "운중도서관" (:library item)))
-           (is (= "소장중" (:status item))))
+            (is (= "테스트 도서" (:title item)))
+            (is (= "12345" (:rec-key item)))
+            (is (= "운중도서관" (:library item)))
+            (is (= "소장중" (:status item))))
           (is (= 1 (count @calls)))
           (is (= "/intro/menu/10065/program/30011/mypage/hopeBookList.do"
                 (:url (first @calls)))))))))
 
-          (deftest hope-book-detail-parses-board-view-table
-          (let [client (core/create-client)
-          html (str
-             "<table class='board-view'><tbody>"
-             "<tr><th>희망도서명</th><td>테스트 도서</td></tr>"
-             "<tr><th>저자</th><td>홍길동</td></tr>"
-             "<tr><th>출판사</th><td>테스트출판</td></tr>"
-             "<tr><th>출판연도</th><td>2024</td></tr>"
-             "<tr><th>ISBN</th><td>9781234567890</td></tr>"
-             "<tr><th>신청일</th><td>2025.04.12</td></tr>"
-             "<tr><th>신청상태</th><td>소장중</td></tr>"
-             "</tbody></table>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body html}]
-          (fn [calls]
-          (let [result (core/hope-book-detail! client {:rec-key "12345"})]
+(deftest hope-book-detail-parses-board-view-table
+  (let [client (core/create-client)
+        html (str
+               "<table class='board-view'><tbody>"
+               "<tr><th>희망도서명</th><td>테스트 도서</td></tr>"
+               "<tr><th>저자</th><td>홍길동</td></tr>"
+               "<tr><th>출판사</th><td>테스트출판</td></tr>"
+               "<tr><th>출판연도</th><td>2024</td></tr>"
+               "<tr><th>ISBN</th><td>9781234567890</td></tr>"
+               "<tr><th>신청일</th><td>2025.04.12</td></tr>"
+               "<tr><th>신청상태</th><td>소장중</td></tr>"
+               "</tbody></table>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/hope-book-detail! client {:rec-key "12345"})]
           (is (true? (:ok? result)))
           (is (= "테스트 도서" (get-in result [:data :title])))
           (is (= "홍길동" (get-in result [:data :author])))
@@ -681,12 +681,12 @@
                 (:url (first @calls))))
           (is (= "12345" (get-in (first @calls) [:query-params "recKey"]))))))))
 
-          (deftest hope-book-detail-validates-rec-key
-          (let [client (core/create-client)]
-          (with-request-stub
-          [{:status 200 :headers {} :body "unused"}]
-          (fn [calls]
-          (let [result (core/hope-book-detail! client {})]
+(deftest hope-book-detail-validates-rec-key
+  (let [client (core/create-client)]
+    (with-request-stub
+      [{:status 200 :headers {} :body "unused"}]
+      (fn [calls]
+        (let [result (core/hope-book-detail! client {})]
           (is (= false (:ok? result)))
           (is (= :invalid-input (:status result)))
           (is (zero? (count @calls))))))))
@@ -695,33 +695,33 @@
           ;; basket-list
           ;; ---------------------------------------------------------------------------
 
-          (deftest basket-list-parses-books
-          (let [client (core/create-client)
-          main-html (str
-                  "<div class='htitle'>기본<span class='normal'>(3건)</span></div>"
-                  "<script>function x() { fnBasketGroupBookMore(99999); }</script>")
-          book-html (str
-                  "<div class='wishBookList'><ul class='listWrap'>"
-                  "<li><div class='bookArea'><a href='#'>"
-                  "<div class='bookData'>"
-                  "<div class='book_name'>테스트 도서</div>"
-                  "<div class='bk_writer'>홍길동 지음</div>"
-                  "<div class='bk_publish'>테스트출판: 2024</div>"
-                  "</div></a></div></li>"
-                  "</ul></div>")]
-          (with-request-stub
-          [{:status 200 :headers {"content-type" "text/html"} :body main-html}
-          {:status 200 :headers {"content-type" "text/html"} :body book-html}]
-          (fn [calls]
-          (let [result (core/basket-list! client {})]
+(deftest basket-list-parses-books
+  (let [client (core/create-client)
+        main-html (str
+                    "<div class='htitle'>기본<span class='normal'>(3건)</span></div>"
+                    "<script>function x() { fnBasketGroupBookMore(99999); }</script>")
+        book-html (str
+                    "<div class='wishBookList'><ul class='listWrap'>"
+                    "<li><div class='bookArea'><a href='#'>"
+                    "<div class='bookData'>"
+                    "<div class='book_name'>테스트 도서</div>"
+                    "<div class='bk_writer'>홍길동 지음</div>"
+                    "<div class='bk_publish'>테스트출판: 2024</div>"
+                    "</div></a></div></li>"
+                    "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body main-html}
+       {:status 200 :headers {"content-type" "text/html"} :body book-html}]
+      (fn [calls]
+        (let [result (core/basket-list! client {})]
           (is (true? (:ok? result)))
           (is (= "99999" (get-in result [:data :group-key])))
           (is (= "기본" (get-in result [:data :group-name])))
           (is (= 3 (get-in result [:data :book-count])))
           (is (= 1 (get-in result [:data :count])))
           (let [book (first (get-in result [:data :books]))]
-           (is (= "테스트 도서" (:title book)))
-           (is (= "홍길동 지음" (:author book))))
+            (is (= "테스트 도서" (:title book)))
+            (is (= "홍길동 지음" (:author book))))
           (is (= 2 (count @calls)))
           (is (= :get (:method (first @calls))))
           (is (= :post (:method (second @calls))))
@@ -827,7 +827,7 @@
       [{:status 503 :headers {} :body "maintenance"}]
       (fn [_calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
-                                                               :reg-no "BEM000133237"})]
+                                                              :reg-no "BEM000133237"})]
           (is (= false (:ok? result)))
           (is (= :remote-error (:status result)))
           (is (= :interloan-popup-request-failed (get-in result [:error :code]))))))))
@@ -845,11 +845,11 @@
 (deftest hope-book-request-submit-detects-failure-message
   (let [client (core/create-client)
         html (str
-              "<form id='registForm' name='registForm' method='post'>"
-              "<input type='hidden' name='manageCode' value='MS'/>"
-              "<input type='text' name='title' value=''/>"
-              "<input type='text' name='author' value=''/>"
-              "</form>")]
+               "<form id='registForm' name='registForm' method='post'>"
+               "<input type='hidden' name='manageCode' value='MS'/>"
+               "<input type='text' name='title' value=''/>"
+               "<input type='text' name='author' value=''/>"
+               "</form>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body html}
        {:status 200
@@ -857,7 +857,7 @@
         :body "<script>alert('희망도서 신청 실패');</script>"}]
       (fn [_calls]
         (let [result (core/hope-book-request! client {:book-info {:title "테스트 도서"
-                                                                   :author "홍길동"}
+                                                                  :author "홍길동"}
                                                       :submit? true
                                                       :allow-submit? true})]
           (is (= false (:ok? result)))
@@ -867,8 +867,8 @@
 (deftest basket-list-returns-remote-error-when-books-request-non-200
   (let [client (core/create-client)
         main-html (str
-                   "<div class='htitle'>기본<span class='normal'>(3건)</span></div>"
-                   "<script>function x() { fnBasketGroupBookMore(99999); }</script>")]
+                    "<div class='htitle'>기본<span class='normal'>(3건)</span></div>"
+                    "<script>function x() { fnBasketGroupBookMore(99999); }</script>")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body main-html}
        {:status 503 :headers {} :body "maintenance"}]

@@ -10,7 +10,7 @@
 
 ```bash
 ./scripts/snlib search-books --keyword "키워드" --pretty
-./scripts/snlib search-books --keyword "키워드" --library-code MA --page 1 --per-page 10 --pretty
+./scripts/snlib search-books --keyword "키워드" --manage-code MA --page 1 --per-page 10 --pretty
 ```
 
 ## My page (read-only)

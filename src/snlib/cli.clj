@@ -1,5 +1,4 @@
 (ns snlib.cli
-  (:gen-class)
   (:require
    [clj-http.cookies :as cookies]
    [clojure.edn :as edn]
@@ -10,7 +9,8 @@
    [snlib.core :as core])
   (:import
    (java.util Date)
-   (org.apache.http.impl.cookie BasicClientCookie)))
+   (org.apache.http.impl.cookie BasicClientCookie))
+  (:gen-class))
 
 (def ^:private session-file-path
   (str (System/getProperty "user.home") "/.config/snlib-cli/session.edn"))
@@ -147,7 +147,8 @@
    [nil "--password PASSWORD" "Login password"]
    [nil "--return-url RETURN_URL" "Encoded login return URL"]
    [nil "--keyword KEYWORD" "Book search keyword"]
-   [nil "--library-code CODE" "Library code (repeatable)"
+   [nil "--manage-code CODE" "Manage code (for search-books/interloan, ex: MA, MB, MS)"]
+   [nil "--library-code CODE" "[Deprecated] Alias of --manage-code for search-books"
     :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
    [nil "--page PAGE" "Search page"
     :parse-fn #(parse-int "--page" %)]
@@ -161,7 +162,6 @@
    [nil "--allow-submit" "Allow write submit from CLI"]
    [nil "--page-path PATH" "Override hope-book page path"]
    [nil "--submit-path PATH" "Override submit path"]
-   [nil "--manage-code CODE" "Interloan manage code (usually 2-letter uppercase, ex: MA)"]
    [nil "--reg-no REG_NO" "Interloan registration number"]
    [nil "--apl-lib-code CODE" "Applicant library code (6-digit numeric, see data/lib-code.edn)"]
    [nil "--give-lib-code CODE" "Giving library code (6-digit numeric, usually auto-filled from popup)"]
@@ -201,12 +201,18 @@
        summary "\n\n"
        "Examples:\n"
        "  snlib login --user-id myid --password secret\n"
-       "  snlib search-books --keyword franklin --library-code MA --page 1 --per-page 10\n"
+       "  snlib search-books --keyword franklin --manage-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
        "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code 141484\n"
        "  snlib my-info\n"
        "  snlib hope-book-detail --rec-key 1938103961\n"
        "  snlib basket-list --group-key 13840"))
+
+(defn- first-manage-code
+  [v]
+  (cond
+    (sequential? v) (some->> v (remove str/blank?) first)
+    :else v))
 
 (defn- command-opts
   [command opts]
@@ -218,7 +224,10 @@
        :return-url (:return-url opts)})
 
     "search-books"
-    (select-keys opts [:keyword :library-code :page :per-page :sort :order])
+    (-> (select-keys opts [:keyword :manage-code :library-code :page :per-page :sort :order])
+        ;; Backward compatibility: --library-code still works, but normalize to :manage-code.
+        (update :manage-code #(or % (:library-code opts)))
+        (dissoc :library-code))
 
     "loan-status"
     {:include-history? (boolean (:include-history opts))}
@@ -232,11 +241,15 @@
 
     "interlibrary-loan-request"
     (-> (select-keys opts [:manage-code :reg-no :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+        ;; If manage-code is provided multiple times, interloan uses the first one.
+        (update :manage-code first-manage-code)
         (assoc :submit? (boolean (:submit opts))
                :allow-submit? (boolean (:allow-submit opts))))
 
     "interloan-request"
     (-> (select-keys opts [:manage-code :reg-no :apl-lib-code :give-lib-code :user-key :appendix-apply-yn])
+        ;; If manage-code is provided multiple times, interloan uses the first one.
+        (update :manage-code first-manage-code)
         (assoc :submit? (boolean (:submit opts))
                :allow-submit? (boolean (:allow-submit opts))))
 
