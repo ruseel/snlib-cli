@@ -20,8 +20,6 @@
 (def ^:private default-hope-book-submit-path "/intro/menu/10045/program/30011/hopeBookApplyProc.do")
 (def ^:private interloan-popup-path "/intro/doorae/bandLillApplyPop.do")
 (def ^:private interloan-submit-path "/intro/doorae/bandLillApplyPopProc.do")
-(def ^:private default-return-url
-  "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
 (def ^:private interloan-success-token "상호대차 신청이 완료되었습니다.")
 
 (def ^:private my-info-path "/intro/menu/10055/program/30017/mypage/myInfo.do")
@@ -116,7 +114,7 @@
         (request client {:method :get :url login-page-path})
         (request client {:method :post
                          :url login-submit-path
-                         :form-params {"returnUrl" (or return-url default-return-url)
+                         :form-params {"returnUrl" (or return-url "aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==")
                                        "userId" user-id
                                        "password" password}
                          :headers {"Referer" (absolute-url client login-page-path)}})
