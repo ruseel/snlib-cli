@@ -1,4 +1,8 @@
 (ns snlib.core
+  "Core command handlers for SNLib.
+
+  Each public `*!` function corresponds to a single CLI command and accepts
+  only that command's `opts` map."
   (:require
    [clj-http.client :as http]
    [clj-http.cookies :as cookies]
@@ -32,7 +36,13 @@
 (def ^:private basket-group-book-list-path "/intro/menu/10057/program/30018/mypage/basketGroupBookList.do")
 
 (defn create-client
-  "Create a client atom with cookie-store for session reuse."
+  "Create a client atom with cookie-store for session reuse.
+
+  opts (optional):
+  - :base-url (default: \"https://snlib.go.kr\")
+  - :timeout-ms (default: 20000)
+  - :user-agent (default: \"Mozilla/5.0 snlib-lib\")
+  - :cookie-store (default: fresh in-memory cookie-store)"
   ([] (create-client {}))
   ([{:keys [base-url timeout-ms user-agent cookie-store]
      :or {base-url default-base-url
@@ -95,6 +105,12 @@
                    body)))))
 
 (defn login!
+  "Run `login` command.
+
+  opts:
+  - :user-id (required)
+  - :password (required)
+  - :return-url (default: \"aHR0cHM6Ly9zbmxpYi5nby5rci9pbnRyby9pbmRleC5kbw==\")"
   [client {:keys [user-id password return-url]}]
   (let [missing (missing-input {:user-id user-id :password password})]
     (if (seq missing)
@@ -268,6 +284,15 @@
       (some-> digits parse-int-safe))))
 
 (defn search-books!
+  "Run `search-books` command.
+
+  opts:
+  - :keyword (required)
+  - :manage-code or :library-code (optional, single or multiple)
+  - :page (default: 1)
+  - :per-page (default: 10)
+  - :sort (default: \"SIMILAR\")
+  - :order (default: \"DESC\")"
   [client {:keys [keyword] :as opts}]
   (if (str/blank? (or keyword ""))
     (error-envelope :invalid-input
@@ -425,6 +450,10 @@
                     (or (:return-status loan) ""))))
 
 (defn loan-status!
+  "Run `loan-status` command.
+
+  opts:
+  - :include-history? (default: false)"
   [client {:keys [include-history?]}]
   (try
     (let [default-opts (default-request-opts client)
@@ -841,6 +870,16 @@
 
 (defn interlibrary-loan-request!
   "Request interlibrary loan.
+
+  opts:
+  - :manage-code (required)
+  - :reg-no (required)
+  - :apl-lib-code (required only when :submit? is true)
+  - :give-lib-code (optional, auto-filled from popup when possible)
+  - :user-key (optional, auto-filled from popup when possible)
+  - :appendix-apply-yn (default: \"N\")
+  - :submit? (default: false; dry-run unless true)
+  - :allow-submit? (default: false)
 
   Required options:
   - :manage-code and :reg-no (from search/detail interloan target)
@@ -1342,6 +1381,10 @@
              {})))))
 
 (defn hope-book-detail!
+  "Run `hope-book-detail` command.
+
+  opts:
+  - :rec-key (required)"
   [client {:keys [rec-key]}]
   (if (str/blank? (or rec-key ""))
     (error-envelope :invalid-input
@@ -1425,6 +1468,10 @@
            vec))))
 
 (defn basket-list!
+  "Run `basket-list` command.
+
+  opts:
+  - :group-key (optional, defaults to first group parsed from basket main page)"
   [client {:keys [group-key]}]
   (try
     (let [default-opts (default-request-opts client)
