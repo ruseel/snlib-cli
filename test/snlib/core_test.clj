@@ -194,6 +194,27 @@
           (is (= "CEM000903366"
                  (get-in result [:data :items 0 :reg-no]))))))))
 
+(deftest search-books-parses-reservation-params-from-loan-reservation-link
+  (let [client (core/create-client)
+        html (str
+               "<ul class='resultList imageType'>"
+               "<li>"
+               "<dt class='tit'><a>인사이더 가상출판사</a></dt>"
+               "<dd class='author'><span>저자 : 이용준 지음</span></dd>"
+               "<div class='stateArea'>"
+               "<a href='#btn' onclick=\"javascript:fnLoanReservationApplyProc('UEM','UEM000819366','MU','BO'); return false;\">도서예약신청</a>"
+               "</div>"
+               "</li>"
+               "</ul>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [_calls]
+        (let [result (core/search-books! client {:keyword "인사이더 가상출판사"})]
+          (is (= "MU"
+                 (get-in result [:data :items 0 :manage-code])))
+          (is (= "UEM000819366"
+                 (get-in result [:data :items 0 :reg-no]))))))))
+
 (deftest loan-status-uses-har-request-contract-and-parses-active-loans
   (let [client (core/create-client)
         html (str

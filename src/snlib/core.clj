@@ -252,11 +252,16 @@
   (or (->> (.select item "a[onclick]")
            (map #(.attr ^Element % "onclick"))
            (some (fn [onclick]
-                   (when-let [[_ manage-code reg-no]
-                              (re-find #"fnBandLillApplyPop\('([^']+)'\s*,\s*'([^']+)'\)"
-                                       onclick)]
-                     {:manage-code manage-code
-                      :reg-no reg-no}))))
+                   (or (when-let [[_ manage-code reg-no]
+                                  (re-find #"fnBandLillApplyPop\('([^']+)'\s*,\s*'([^']+)'\)"
+                                           onclick)]
+                         {:manage-code manage-code
+                          :reg-no reg-no})
+                       (when-let [[_ _prefix reg-no manage-code _site-code]
+                                  (re-find #"fnLoanReservationApplyProc\('([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\)"
+                                           onclick)]
+                         {:manage-code manage-code
+                          :reg-no reg-no})))))
       {:manage-code nil
        :reg-no nil}))
 
