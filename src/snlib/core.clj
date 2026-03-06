@@ -202,16 +202,23 @@
                "viewStatus" "IMAGE"
                "preSearchKey" "ALL"
                "preSearchKeyword" keyword
-               "searchPbLibrary" "ALL"
                "searchSort" (or sort "SIMILAR")
                "searchOrder" (or order "DESC")
                "searchRecordCount" (str (or per-page 10))
                "searchBookClass" "ALL"}]
     (cond-> query
+      (empty? manage-codes)
+      ;; Default browser search checks all public libraries and no small libraries.
+      (assoc "searchPbLibrary" "ALL"
+             "searchSmLibrary" "")
+
       (seq manage-codes)
-      ;; NOTE: Server contract uses searchLibraryArr, and this CLI/library fills it with
-      ;; manage-code values (ex: MA, MB, MS).
-      (assoc "searchLibraryArr" (if (= 1 (count manage-codes))
+      ;; Browser re-search clears searchPbLibrary/searchSmLibrary when a subset is selected.
+      ;; If searchPbLibrary=ALL is sent with searchLibraryArr=MU, the server ignores the subset
+      ;; and returns every public library result.
+      (assoc "searchPbLibrary" ""
+             "searchSmLibrary" ""
+             "searchLibraryArr" (if (= 1 (count manage-codes))
                                   (first manage-codes)
                                   manage-codes)))))
 

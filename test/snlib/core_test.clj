@@ -141,8 +141,22 @@
             (is (= "DESC" (get-in (first @calls) [:query-params "searchOrder"])))
             (is (= "5" (get-in (first @calls) [:query-params "searchRecordCount"])))
             (is (= "2" (get-in (first @calls) [:query-params "currentPageNo"])))
+            (is (= "" (get-in (first @calls) [:query-params "searchPbLibrary"])))
+            (is (= "" (get-in (first @calls) [:query-params "searchSmLibrary"])))
             (is (= ["MA" "MS"]
                    (get-in (first @calls) [:query-params "searchLibraryArr"])))))))))
+
+(deftest search-books-uses-public-library-default-when-manage-code-is-absent
+  (let [client (core/create-client)
+        html "<p class='rtitle'>검색 결과 총 <strong class='themeFC'>0건</strong></p>"]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [calls]
+        (let [result (core/search-books! client {:keyword "인사이더 가상출판사"})]
+          (is (:ok? result))
+          (is (= "ALL" (get-in (first @calls) [:query-params "searchPbLibrary"])))
+          (is (= "" (get-in (first @calls) [:query-params "searchSmLibrary"])))
+          (is (nil? (get-in (first @calls) [:query-params "searchLibraryArr"]))))))))
 
 (deftest search-books-validates-input-before-http
   (let [client (core/create-client)]

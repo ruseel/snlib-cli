@@ -7,6 +7,7 @@ SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-7383431969192e7c875904a7960726add6cf3c0b}"
 # Optional complete -Sdeps override for dev/testing.
 # Example: SNLIB_DEPS_EDN='{:deps {...}}'
 SNLIB_DEPS_EDN="${SNLIB_DEPS_EDN:-}"
+SNLIB_USE_LOCAL_CHECKOUT="${SNLIB_USE_LOCAL_CHECKOUT:-1}"
 
 # OpenClaw runs may not load interactive shell PATH.
 # Auto-discover local installs used in this workspace.
@@ -31,6 +32,16 @@ fi
 if ! command -v clojure >/dev/null 2>&1; then
   echo "ERROR: clojure command not found. Install Clojure CLI first (or add ~/.local/bin to PATH)." >&2
   exit 127
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "${script_dir}/../../.." && pwd)"
+
+if [[ "${SNLIB_USE_LOCAL_CHECKOUT}" != "0" ]] \
+  && [[ -f "${repo_root}/deps.edn" ]] \
+  && [[ -f "${repo_root}/src/snlib/cli.clj" ]]; then
+  cd "${repo_root}"
+  exec clojure -M -m snlib.cli "$@"
 fi
 
 if [[ -n "${SNLIB_DEPS_EDN}" ]]; then
