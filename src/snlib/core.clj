@@ -689,12 +689,6 @@
         message-from-body
         message-from-title)))
 
-(def ^:private hope-book-submit-success-pattern
-  #"(?i)(신청\s*완료|등록\s*완료|정상\s*처리|완료\s*되었습니다)")
-
-(def ^:private hope-book-submit-failure-pattern
-  #"(?i)(신청\s*실패|처리\s*실패|오류|에러|error|차단|로그인)")
-
 (defn hope-book-request!
   [client
    {:keys [request manage-code submit? page-path submit-path]
@@ -764,20 +758,7 @@
               status-code (:status submit-res)
               result-message (or (parse-hope-book-result-message submit-body)
                                  (parse-hope-book-result-message page-html))
-              logged-out? (logged-out-page? submit-body)
-              success-signal? (boolean
-                                (or (re-find hope-book-submit-success-pattern submit-body)
-                                    (some->> result-message
-                                             (re-find hope-book-submit-success-pattern))))
-              failure-signal? (boolean
-                                (or logged-out?
-                                    (re-find hope-book-submit-failure-pattern submit-body)
-                                    (some->> result-message
-                                             (re-find hope-book-submit-failure-pattern))))
-              success? (and (<= 200 status-code 399)
-                            (not failure-signal?)
-                            (or success-signal?
-                                (str/blank? result-message)))
+              success? (= 200 status-code)
               status (if success? :ok :submit-failed)]
           {:ok? success?
            :status status
