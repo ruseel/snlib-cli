@@ -697,10 +697,13 @@
 
 (defn hope-book-request!
   [client
-   {:keys [request submit? page-path submit-path]
+   {:keys [request manage-code submit? page-path submit-path]
     :as opts}]
   (try
     (let [default-opts (default-request-opts client)
+          normalized-request (merge (if (map? request) request {})
+                                    (when-not (str/blank? (or manage-code ""))
+                                      {:manage-code manage-code}))
           resolved-page-path (or page-path default-hope-book-page-path)
           page-res (http/request (merge default-opts
                                         {:method :get
@@ -716,7 +719,7 @@
                                    (:action selected-form)
                                    (guess-hope-book-submit-path page-html)
                                    default-hope-book-submit-path)
-          prepared-payload (build-hope-book-payload selected-form request)
+          prepared-payload (build-hope-book-payload selected-form normalized-request)
           base-data {:prepared-payload prepared-payload
                      :submit-attempted? (boolean submit?)
                      :submit-blocked? false

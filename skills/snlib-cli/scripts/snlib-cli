@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-https://github.com/ruseel/snlib-cli}"
-SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-v0.1.0}"
+SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-git@github-ruseel:ruseel/2026-02-27-snlib-cli.git}"
+SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-20260304}"
+SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-7383431969192e7c875904a7960726add6cf3c0b}"
+# Optional complete -Sdeps override for dev/testing.
+# Example: SNLIB_DEPS_EDN='{:deps {...}}'
+SNLIB_DEPS_EDN="${SNLIB_DEPS_EDN:-}"
 
-# Telegram/OpenClaw runs may not load interactive shell PATH.
+# OpenClaw runs may not load interactive shell PATH.
 # Auto-discover local installs used in this workspace.
 if ! command -v java >/dev/null 2>&1; then
   if [[ -x "$HOME/.local/jdk/bin/java" ]]; then
@@ -29,11 +33,15 @@ if ! command -v clojure >/dev/null 2>&1; then
   exit 127
 fi
 
-if [[ -z "${SNLIB_GIT_TAG}" ]]; then
-  echo "ERROR: SNLIB_GIT_TAG must be set. This launcher only supports tag-based refs (SHA/main not allowed)." >&2
-  exit 2
+if [[ -n "${SNLIB_DEPS_EDN}" ]]; then
+  deps_edn="${SNLIB_DEPS_EDN}"
+else
+  if [[ -z "${SNLIB_GIT_TAG}" || -z "${SNLIB_GIT_SHA}" ]]; then
+    echo "ERROR: SNLIB_GIT_TAG and SNLIB_GIT_SHA must both be set for tools.deps git deps." >&2
+    exit 2
+  fi
+  # Keep :git/url explicit because this repo name does not match io.github.ruseel/snlib-cli.
+  deps_edn="{:deps {io.github.ruseel/snlib-cli {:git/url \"${SNLIB_GITHUB_REPO}\" :git/tag \"${SNLIB_GIT_TAG}\" :git/sha \"${SNLIB_GIT_SHA}\"}}}"
 fi
-
-deps_edn="{:deps {io.github.ruseel/snlib-cli {:git/url \"${SNLIB_GITHUB_REPO}\" :git/tag \"${SNLIB_GIT_TAG}\"}}}"
 
 exec clojure -Sdeps "$deps_edn" -M -m snlib.cli "$@"

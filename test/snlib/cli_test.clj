@@ -41,11 +41,13 @@
                               (reset! captured-opts opts)
                               {:ok? true :status :ok :data {} :error nil})}}
       #(let [result (cli/run-cli ["hope-book-request"
+                                  "--manage-code" "MU"
                                   "--request-edn" "{:title \"테스트\" :author \"홍길동\" :handPhone \"010-1234-5678\"}"
                                   "--submit"
                                   "--allow-submit"])]
          (is (= 0 (:exit-code result)))
-         (is (= {:submit? true
+         (is (= {:manage-code "MU"
+                 :submit? true
                  :allow-submit? true
                  :request {:title "테스트"
                            :author "홍길동"

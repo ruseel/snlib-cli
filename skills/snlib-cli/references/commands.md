@@ -47,9 +47,14 @@
   --submit --allow-submit --pretty
 ```
 
-## GitHub ref override (tag only)
+## GitHub/deps override
 
 ```bash
 SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli my-info --pretty
 SNLIB_GITHUB_REPO=https://github.com/example/snlib-cli SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli loan-status --pretty
+
+# full -Sdeps override (for dev/testing)
+SSH_URL="$(git remote get-url origin)"
+SNLIB_DEPS_EDN="{:deps {io.github.ruseel/snlib-cli {:git/url \"$SSH_URL\" :git/tag \"20260304\" :git/sha \"7383431969192e7c875904a7960726add6cf3c0b\"}}}" \
+  ./scripts/snlib-cli --help
 ```

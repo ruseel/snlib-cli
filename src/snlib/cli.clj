@@ -192,7 +192,7 @@
    [nil "--password PASSWORD" "Login password"]
    [nil "--return-url RETURN_URL" (str "Encoded login return URL (default: " default-login-return-url ")")]
    [nil "--keyword KEYWORD" "Book search keyword"]
-   [nil "--manage-code CODE" "Manage code (for search-books/interloan, ex: MA, MB, MS)"]
+   [nil "--manage-code CODE" "Manage code (for search-books/interloan/hope-book, ex: MA, MB, MS)"]
    [nil "--library-code CODE" "[Deprecated] Alias of --manage-code for search-books"
     :assoc-fn (fn [m k v] (update m k (fnil conj []) v))]
    [nil "--page PAGE" "Search page (default: 1)"
@@ -239,7 +239,8 @@
    ["--include-history (default: false)"]
 
    "hope-book-request"
-   ["--request-edn EDN (optional, single map)"
+   ["--manage-code CODE (optional; recommended for submit)"
+    "--request-edn EDN (optional, single map)"
     "--submit (default: false)"
     "--allow-submit (default: false)"
     (str "--page-path PATH (default: " default-hope-book-page-path ")")
@@ -334,7 +335,7 @@
        "  snlib search-books --keyword franklin --manage-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
        "  snlib interloan-request --manage-code MA --reg-no CEM000050087 --submit --apl-lib-code 141484\n"
-       "  snlib hope-book-request --request-edn '{:title \"도서명\" :author \"저자\" :handPhone \"010-1234-5678\" :email \"user@example.com\"}' --submit --allow-submit\n"
+       "  snlib hope-book-request --manage-code MU --request-edn '{:title \"도서명\" :author \"저자\" :handPhone \"010-1234-5678\" :email \"user@example.com\"}' --submit --allow-submit\n"
        "  snlib my-info\n"
        "  snlib hope-book-detail --rec-key 1938103961\n"
        "  snlib basket-list --group-key 13840"))
@@ -364,7 +365,7 @@
     {:include-history? (boolean (:include-history opts))}
 
     "hope-book-request"
-    (-> (select-keys opts [:page-path :submit-path])
+    (-> (select-keys opts [:page-path :submit-path :manage-code])
         (assoc :submit? (boolean (:submit opts))
                :allow-submit? (boolean (:allow-submit opts))
                :request (or (:request-edn opts) {})))

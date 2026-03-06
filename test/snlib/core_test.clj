@@ -488,7 +488,6 @@
   (let [client (core/create-client)
         html (str
                "<form id='registForm' name='registForm' method='post'>"
-               "<input type='hidden' name='manageCode' value='MS'/>"
                "<input type='text' name='title' value=''/>"
                "<input type='text' name='author' value=''/>"
                "</form>"
@@ -506,6 +505,7 @@
                                                                 :email "tester@example.com"
                                                                 :sms-receipt-yn "Y"
                                                                 :handPhone "010-1234-5678"}
+                                                      :manage-code "MU"
                                                       :submit? true
                                                       :allow-submit? true})]
           (is (true? (:ok? result)))
@@ -515,7 +515,7 @@
           (is (= :post (:method (second @calls))))
           (is (= "/intro/menu/10045/program/30011/hopeBookApplyProc.do"
                  (:url (second @calls))))
-          (is (= "MS" (get-in (second @calls) [:form-params "manageCode"])))
+          (is (= "MU" (get-in (second @calls) [:form-params "manageCode"])))
           (is (= "클린 코드" (get-in (second @calls) [:form-params "title"])))
           (is (= "9788966262281" (get-in (second @calls) [:form-params "eaIsbn"])))
           (is (= "32000" (get-in (second @calls) [:form-params "price"])))
