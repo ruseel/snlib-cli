@@ -558,20 +558,33 @@
                                        (let [tag (.tagName field)
                                              field-type (if (= "input" tag)
                                                           (.attr field "type")
-                                                          tag)]
+                                                          tag)
+                                             current-value (cond
+                                                             (= "textarea" tag)
+                                                             (.text field)
+
+                                                             (= "select" tag)
+                                                             (or (some-> (.select field "option[selected]") first (.attr "value"))
+                                                                 (some-> (.select field "option") first (.attr "value"))
+                                                                 "")
+
+                                                             (contains? #{"checkbox" "radio"} (str/lower-case (or field-type "")))
+                                                             (if (.hasAttr field "checked")
+                                                               (.attr field "value")
+                                                               "")
+
+                                                             :else
+                                                             (.attr field "value"))]
                                          {:name (.attr field "name")
                                           :type (or field-type "")
-                                          :value (.attr field "value")})))
+                                          :value current-value})))
                                 (remove #(str/blank? (:name %)))
                                 vec)}))
            vec))))
 
-(defn- form-hidden-defaults
+(defn- form-field-defaults
   [form-spec]
   (->> (:fields form-spec)
-       (filter #(= "hidden" (-> (or (:type %) "")
-                                str/trim
-                                str/lower-case)))
        (reduce (fn [acc {:keys [name value]}]
                  (assoc acc name (or value "")))
                {})))
@@ -669,7 +682,7 @@
 
 (defn- build-hope-book-payload
   [form-spec request]
-  (-> (merge (form-hidden-defaults form-spec)
+  (-> (merge (form-field-defaults form-spec)
              (stringify-field-map request))
       enrich-hope-book-phone-fields))
 

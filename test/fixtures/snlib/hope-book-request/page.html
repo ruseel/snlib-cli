@@ -1,0 +1,1165 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<meta name="author" content="성남시도서관사업소">
+<meta name="description" content="성남시도서관사업소 정보 및 도서검색 제공">
+<meta name="generator" content="jnet co. ltd.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="성남시도서관사업소">
+<meta property="og:description" content="성남시도서관사업소 정보 및 도서검색 제공">
+<meta property="og:image" content="/include/image/common/ico_sns_favicon.png">
+<meta property="og:url" content="https://www.snlib.go.kr/intro/index.do">
+<title>성남시도서관사업소</title>
+<link rel="shortcut icon" href="/include/image/common/ico_sns_favicon.png">
+<link rel="stylesheet" type="text/css" href="/include/css/intro/sub.css?ver=20260130">
+<link rel="stylesheet" type="text/css" href="/include/css/common/layoutCommon.css">
+<link rel="stylesheet" type="text/css" href="/include/css/common/custom.css?ver=231012">
+<link rel="stylesheet" type="text/css" href="/include/js/jquery-ui.min.css">
+
+<script type="text/javascript" src="/include/js/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/include/js/jquery.slider.js"></script>
+<script type="text/javascript" src="/include/js/jquery.tab.js"></script>
+<script type="text/javascript" src="/include/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/include/js/jquery-ui.datepicker.js"></script>
+<script type="text/javascript" src="/include/js/jquery.newsticker.js"></script>
+<script type="text/javascript" src="/include/js/moment.min.js"></script>
+<script type="text/javascript" src="/include/js/moment-ko.js"></script>
+<script type="text/javascript" src="/include/js/jQuery.stringify.js"></script>
+<script type="text/javascript" src="/include/js/gnb.js"></script>
+<script type="text/javascript" src="/include/js/common.js"></script>
+
+
+	
+			<script type="text/javascript">
+				$(function(){
+					eval("initMenu(5,6,2,0,0)");
+				});
+			</script>
+		
+
+<script type="text/javascript">
+var siteCd = "intro";
+</script>
+
+
+<script type="text/javascript">
+	$(function() {
+		$("#keywordBookSearchPopBtn, #isbnBookSearchPopBtn").click(fnBookSearchPop);
+		$("#registBtn").click(fnRegistProc);
+
+		$("#hopeBookEcipPop").click(fnHopeBookEcipPop);
+	});
+
+	function fnBookSearchPop() {
+		var form = document.registForm;
+		if(isEmpty(form.manageCode.value)) {
+			alert("신청도서관을 선택하세요.");
+			form.manageCode.focus();
+			return false;
+		}
+
+		if($(this).attr("id") == "keywordBookSearchPopBtn"){
+			if(isEmpty(form.title.value)) {
+				alert("희망도서명을 입력하세요.");
+				form.title.focus();
+				return false;
+			}
+			var url = "/intro/hopebook/hopeBookSearchPop.do?manageCode=" + form.manageCode.value + "&searchCondition=TITLE&searchCategory=BOOK&searchKeyword=" + encodeURIComponent(form.title.value);
+		}
+		if($(this).attr("id") == "isbnBookSearchPopBtn"){
+			if(isEmpty(form.eaIsbn.value)) {
+				alert("ISBN을 입력하세요.");
+				form.eaIsbn.focus();
+				return false;
+			}
+			var url = "/intro/hopebook/hopeBookSearchPop.do?manageCode=" + form.manageCode.value + "&searchCondition=ISBN&searchKeyword=" + encodeURIComponent(form.eaIsbn.value);
+		}
+		var objwin = window.open(url, "hopeBookSearchPop", "resizable=no, status=no, scrollbars=yes, toolbar=no, menubar=no, width=800px, height=900px,left=0,top=0");
+		objwin.focus();
+		return false;
+	}
+
+	function fnHopeBookSearchCallBack(title, author, publisher, pubdate, price, isbn10, isbn13) {
+		var form = document.registForm;
+
+		form.title.value = title;
+		form.author.value = author;
+		form.publisher.value = publisher;
+		form.publishYear.value = pubdate;
+		if(price != ""){
+			form.price.value = parseInt(price, 10);
+		}
+		form.eaIsbn.value = isbn13;
+	}
+
+	function fnRegistProc() {
+		var form = document.registForm;
+
+		if($('input:checkbox[name=smsReceiptYn]:checked').val() != "Y"){
+			alert("유의사항을 확인하세요.");
+			document.getElementById("registForm").scrollIntoView();
+			return false;
+		}
+
+		if(isEmpty(form.manageCode.value)){
+			alert("신청도서관을 선택하세요.");
+			$("#manageCode").focus();
+			return false;
+		}
+
+		var regExpMobile = /^\d{3}-\d{3,4}-\d{4}$/;
+		var mobileNo1 = form.mobileNo1.value;
+		var mobileNo2 = form.mobileNo2.value;
+		var mobileNo3 = form.mobileNo3.value;
+		var mobileNo = mobileNo1+"-"+mobileNo2+"-"+mobileNo3;
+
+		if(isEmpty(mobileNo1) || isEmpty(mobileNo2) || isEmpty(mobileNo3)){
+			alert("휴대전화번호를 입력하세요.");
+			form.mobileNo1.focus();
+			return false;
+		}
+
+		if(!regExpMobile.test(mobileNo)){
+			alert("유효하지 않은 휴대전화번호입니다.");
+			form.mobileNo2.focus();
+			return false;
+		}
+		form.handPhone.value = mobileNo;
+
+		if(isEmpty(form.email.value)){
+			alert("이메일을 입력하세요.");
+			form.email.focus();
+			return false;
+		}
+
+		var regExpEmail = /([\w-\.]+)@{1}((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+		if(!regExpEmail.test(form.email.value)){
+			alert("이메일 주소가 올바르지 않습니다");
+			form.email.focus();
+			return false;
+		}
+
+ 		if (isEmpty(form.title.value)) {
+ 			alert("희망도서명을 입력하세요.");
+ 			form.title.focus();
+ 			return false;
+ 		}
+ 		if (isEmpty(form.author.value)) {
+ 			alert("저자를 입력하세요.");
+ 			form.author.focus();
+ 			return false;
+ 		}
+ 		if (isEmpty(form.publisher.value)) {
+ 			alert("발행자를 입력하세요.");
+ 			form.publisher.focus();
+ 			return false;
+ 		}
+
+		if(isNotEmpty(form.price.value)){
+			var regExpPrice = /^[0-9]+$/g;
+			if(!regExpPrice.test(form.price.value)){
+				alert("숫자만 입력하세요.");
+				form.price.value = "";
+				form.price.focus();
+				return false;
+			}
+		}
+
+		if (confirm("희망도서를 신청하시겠습니까?")) {
+			form.action = "/intro/menu/10045/program/30011/hopeBookApplyProc.do";
+			form.submit();
+		}
+		return false;
+	}
+
+	//ISBN 유효성 체크
+	function fnIsbnValidCheck(isbn) {
+		var result = false;
+		$.ajax({
+			type : "post",
+			url : "/hopebook/isbnValidCheck.do",
+			data : {"eaIsbn" : isbn},
+			dataType : "json",
+			async : false,
+			success : function(data) {
+				if (data.result == "Y") {
+					result = true;
+				} else {
+					result = false;
+				}
+			},
+			error : function(request, status, error) {
+				alert("에러코드 : " + request.status + "\n" + "메시지 :" + request.responseText);
+				result = false;
+			}
+		});
+
+		return result;
+	}
+
+	function fnHopeBookEcipPop(){
+
+		if($('input:checkbox[name=smsReceiptYn]:checked').val() != "Y"){
+			alert("유의사항을 확인하세요.");
+			return false;
+		}
+
+		var url = "/intro/hopebook/hopeBookEcipPop.do";
+		//window.open(url, "hopeBook", "resizable=yes, status=no, scrollbars=yes, toolbar=no, menubar=no, width=870px, height=620px");
+		var openNewWindow = window.open("about:blank");
+		openNewWindow.location.href = url;
+		return false;
+	}
+</script>
+
+</head>
+<body>
+<!-- skip -->
+<ul class="skip">
+	<li><a href="#contentcore">본문 바로가기</a></li>
+	<li><a href="#lnb">하위메뉴 바로가기</a></li>
+</ul>
+<!-- //skip -->
+<!-- wrap -->
+<div id="wrap">
+	
+
+
+<header id="header">
+	<a href="#back" id="blackBG"><span class="blind">이전으로 돌아가기</span></a>
+	
+
+<div id="snb">
+	<div class="siteUtilGroup">
+		<div id="libraryShortcut" class="libSite dropdown">
+			<a href="#open" class="button">도서관 바로가기</a>
+			<ul>
+				
+					
+				
+					
+						<li><a href="/ct/index.do" rel="nosublink">중앙도서관 </a></li>
+					
+				
+					
+						<li><a href="/gd/index.do" rel="nosublink">고등도서관</a></li>
+					
+				
+					
+						<li><a href="/gm/index.do" rel="nosublink">구미도서관</a></li>
+					
+				
+					
+						<li><a href="/ng/index.do" rel="nosublink">논골도서관</a></li>
+					
+				
+					
+						<li><a href="/mjg/index.do" rel="nosublink">무지개도서관</a></li>
+					
+				
+					
+						<li><a href="/bj/index.do" rel="nosublink">복정도서관</a></li>
+					
+				
+					
+						<li><a href="/bd/index.do" rel="nosublink">분당도서관 </a></li>
+					
+				
+					
+						<li><a href="/sh/index.do" rel="nosublink">서현도서관</a></li>
+					
+				
+					
+						<li><a href="/sn/index.do" rel="nosublink">수내도서관</a></li>
+					
+				
+					
+						<li><a href="/sj/index.do" rel="nosublink">수정도서관</a></li>
+					
+				
+					
+						<li><a href="/uj/index.do" rel="nosublink">운중도서관</a></li>
+					
+				
+					
+						<li><a href="/wr/index.do" rel="nosublink">위례도서관</a></li>
+					
+				
+					
+						<li><a href="/jw/index.do" rel="nosublink">중원도서관</a></li>
+					
+				
+					
+						<li><a href="/cjw/index.do" rel="nosublink">중원어린이도서관 </a></li>
+					
+				
+					
+						<li><a href="/bt/index.do" rel="nosublink">책테마파크도서관</a></li>
+					
+				
+					
+						<li><a href="/pg/index.do" rel="nosublink">판교도서관 </a></li>
+					
+				
+					
+						<li><a href="/cpg/index.do" rel="nosublink">판교어린이도서관 </a></li>
+					
+				
+					
+						<li><a href="/hor/index.do" rel="nosublink">해오름도서관</a></li>
+					
+				
+					
+						<li><a href="/small/index.do" rel="nosublink">작은도서관</a></li>
+					
+				
+			</ul>
+		</div>
+		<div id="siteMenu" class="siteMenu clearfix">
+			<ul>
+				
+						<li class="userInfo">테스트사용자(testuser)</li>
+						<li class="logout"><a href="/intro/memberLogout.do">로그아웃</a></li>
+						<li class="mypage"><a href="/intro/memberModifyCheck.do">정보수정</a></li>
+						
+					
+				<li class="sitemap"><a href="/intro/siteMap.do">사이트맵</a></li>
+			</ul>
+			<div id="langsShortcut" class="langs dropdown">
+				<a href="#lang" class="button">Language</a>
+<!-- 				<ul> -->
+<!-- 					<li><a href="/lang/eng/index.do" title="새창에서 열림" target="_blank">English</a></li> -->
+<!-- 					<li><a href="/lang/chn/index.do" title="새창에서 열림" target="_blank">中國語</a></li> -->
+<!-- 					<li><a href="/lang/jpn/index.do" title="새창에서 열림" target="_blank">日本語</a></li> -->
+<!-- 				</ul> -->
+				<script>
+					function googleTranslateElementInit() {
+						new google.translate.TranslateElement({pageLanguage: 'ko', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'langsShortcut');
+						$(".goog-te-gadget-simple").before('<p class="tit">Google Translate</p>');
+					}
+
+
+					$(document).ready(function(){
+						$(".langs .button").on("click", function(){
+							$(".goog-te-gadget").slideToggle(300);
+						});
+					});
+				</script>
+				<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	$(function(){
+		$(".dropdown > a").click(function(){
+			var $dropdownNav = $(this).siblings("ul");
+			if($dropdownNav.css("display") == "none"){
+				$(".dropdown > ul").hide();
+				$dropdownNav.show();
+			}else{
+				$dropdownNav.hide();
+			}
+			return false;
+		});
+		
+			
+					$("#gnb7").hide();
+					$("#gnb8").show();
+				
+		
+
+	});
+
+</script>
+
+
+	<div class="headerInner clearfix">
+		<!--<a href="https://www.snlib.go.kr/intro/menu/206692/contents/41803/contents.do" class="th50_logo"><img src="/include/image/common/50th_logo_new.gif" alt="성남시 50주년"></a>-->
+		<h1 id="logo"><a href="/intro/index.do"><img src="/include/image/common/logo.png" alt="성남시 도서관사업소" /></a></h1>
+		<a href="#open" id="mobileIndexOpen"><span class="blind">메뉴 열기</span></a>
+		
+
+<a href="#searchBoxOpen" id="btnSearchTop"><span class="blind">검색창열기</span></a>
+<form name="topSearchForm" id="topSearchForm" method="post">
+	<input type="hidden" name="searchType" value="SIMPLE">
+	<input type="hidden" name="searchCategory" value="BOOK">
+	<input type="hidden" name="searchKey" value="ALL">
+	
+			<input type="hidden" name="searchPbLibrary" value="ALL" />
+		
+	<fieldset>
+		<legend class="blind">검색 영역</legend>
+		<div id="searchBox" class="searchBoxWrap">
+			<div class="searchBox ">
+				<label for="topSearchType" class="blind">검색유형 선택</label>
+				<!--<select name="topSearchType" id="topSearchType" class="searchSelect">
+					<option value="BOOK" selected="selected">소장자료</option>
+					<option value="HOME" >홈페이지</option>
+				</select>-->
+				<div class="radiBox">
+					<span class="chk"><input type="radio" name="topSearchType" id="booksearch" value="BOOK" checked="checked"><label for="booksearch">소장자료</label></span>
+
+						<span class="chk"><input type="radio" name="topSearchType" id="homepage"><label for="homepage">홈페이지</label></span>
+
+				</div>
+				<div class="keywordInput">
+					<label for="topSearchKeyword" class="blind">검색어 입력</label>
+					<input type="text" title="검색어 입력" id="topSearchKeyword" name="searchKeyword" autocomplete="off" placeholder="검색어 입력">
+				</div>
+				<a href="#search" id="topSearchBtn" title="검색" class="btnSearch"><span class="blind">검색</span></a>
+			</div>
+			<div id="topPopularKeyword" class="keywordPop mobileHide">
+				
+
+
+<div class="controlArea">
+	<a href="#up" id="btnUp" title="인기검색어 위로 넘기기"><span class="blind">위</span></a>
+	<a href="#dwon" id="btnDwon" title="인기검색어 아래로 넘기기"><span class="blind">아래</span></a>
+</div>
+<div class="controlAreaOp2">
+	<a href="#pause" id="btnPause" title="인기검색어 정지"><span class="blind">정지</span></a>
+	<a href="#play" id="btnPlay" title="인기검색어 시작"><span class="blind">시작</span></a>
+</div>
+
+<ol class="keywordList">
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('흔한남매'); return false;" title="흔한남매">흔한남매</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('에그박사'); return false;" title="에그박사">에그박사</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('슈뻘맨'); return false;" title="슈뻘맨">슈뻘맨</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('카카오프렌즈'); return false;" title="카카오프렌즈">카카오프렌즈</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('혼모노'); return false;" title="혼모노">혼모노</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('백앤아'); return false;" title="백앤아">백앤아</a></li>
+	
+		<li><a href="#link" onclick="javascript:fnTopSearchPopularWord('모순'); return false;" title="모순">모순</a></li>
+	
+</ol>
+
+<script type="text/javascript">
+	$(document).ready(function(e) {
+
+		var keywordList = $('.keywordList').newsTicker({
+			itemHeight: 40,
+			showItems: 1,
+			duration: 4000,
+			prevButton: $('#btnDwon'),
+			nextButton: $('#btnUp'),
+			stopButton: $('#btnPause'),
+			startButton: $('#btnPlay')
+		});
+
+		$("#topSearchKeyword").keypress(function (e){
+			if((e.keyCode || e.which) == 13){
+				fnTopSearch();
+				e.preventDefault();
+			}
+		});
+		$("#topSearchBtn").click(fnTopSearch);
+
+		$("#btnPause").click(function(){
+			$(this).hide();
+			$("#btnPlay").attr("style","display:block");
+		});
+
+		$("#btnPlay").click(function() {
+			$(this).hide();
+			$("#btnPause").attr("style","display:block");
+		});
+	});
+
+	function fnTopSearchPopularWord(popularWord){
+		var form = document.topSearchForm;
+		form.searchKeyword.value = popularWord;
+		form.action="/intro/plusSearchResultList.do"
+		form.submit();
+	}
+</script>
+			</div>
+			
+		</div>
+	</fieldset>
+</form>
+
+<script type="text/javascript">
+	$(function(){
+		var $sel = $("#topSearchType");
+		var $searchBox = $(".searchBox");
+		$sel.change(function(){
+			if($(this).val() == "HOME") $searchBox.addClass("in");
+			else $searchBox.removeClass("in");
+			return false;
+		});
+
+		if("intro" != "intro"){
+			$("#topPopularKeyword").load("/intro/include/topPopularKeyword.do");
+		}
+	});
+
+	function fnTopSearch() {
+		var form = document.topSearchForm;
+		if(isEmpty(form.searchKeyword.value)){
+				alert("검색어를 입력하세요.")
+				form.searchKeyword.focus();
+				return false;
+		}
+
+		if (form.topSearchType.value == "BOOK"){
+			form.action="/intro/plusSearchResultList.do"
+		}else {
+			form.action="/intro/searchTotalResultList.do"
+		}
+
+		form.submit();
+	}
+</script>
+	</div>
+	<nav id="gnbNav">
+		<div id="mobileIndexClose"><a href="#close"><span class="blind">메뉴 닫기</span></a></div>
+		<ul id="gnb" class="clearfix"> 
+ <li id="gnb1"><a href="/intro/menu/10041/program/30009/plusSearchSimple.do">자료검색</a> 
+  <ul> 
+   <li><a href="/intro/menu/10041/program/30009/plusSearchSimple.do">통합자료검색</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10041/program/30009/plusSearchSimple.do">간략검색</a> </li> 
+     <li><a href="/intro/menu/10042/program/30010/plusSearchDetail.do">상세검색</a> </li> 
+     <li><a href="/intro/menu/10043/contents/40007/contents.do">자료검색 도움말</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10036/program/30004/plusSearchKdc.do">주제별검색</a> </li> 
+   <li><a href="/intro/menu/10037/program/30005/plusSearchNewList.do">신착자료검색</a> </li> 
+   <li><a href="/intro/menu/10038/program/30006/plusLoanBestList.do">대출베스트</a> </li> 
+   <li><a href="/intro/menu/12972/program/30144/aiBookAge.do">취향분석 추천도서</a> </li> 
+   <li><a href="/intro/menu/10039/program/30007/libraryPopularBookList.do">공공도서관인기도서</a> </li> 
+   <li><a href="/intro/menu/12714/program/30128/smartLibraryBookList.do">스마트도서관 검색</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/12714/program/30128/smartLibraryBookList.do">스마트도서관</a> </li> 
+    </ul> </li> 
+  </ul> </li> 
+ <li id="gnb2"><a href="/intro/menu/10011/contents/40012/contents.do">도서관안내</a> 
+  <ul> 
+   <li><a href="/intro/menu/10011/contents/40012/contents.do">인사말</a> </li> 
+   <li><a href="/intro/menu/10012/contents/40013/contents.do">연혁</a> </li> 
+   <li><a href="/intro/menu/10017/contents/40016/contents.do">성남시도서관 현황</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10017/contents/40016/contents.do">공공도서관</a> </li> 
+     <li><a href="/intro/menu/10018/contents/40017/contents.do">작은도서관</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10019/contents/40018/contents.do">조직/업무정보</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/10019/contents/40018/contents.do">조직도</a> </li> 
+     <li><a href="/intro/menu/10020/program/30002/staffList.do">업무정보</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10015/contents/40014/contents.do">도서관서비스헌장</a> </li> 
+   <li><a href="/intro/menu/10016/contents/40097/contents.do">도서관법/조례</a> </li> 
+   <li><a href="/intro/menu/205568/contents/41301/contents.do">책이음안내</a> </li> 
+   <li><a href="/intro/menu/207172/bbs/21881/bbsPostList.do">큰글자 소식</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/207172/bbs/21881/bbsPostList.do">큰글자 소식지</a> </li> 
+    </ul> </li> 
+  </ul> </li> 
+ <li id="gnb3"><a href="/intro/menu/10021/contents/40019/contents.do">이용안내</a> 
+  <ul> 
+   <li><a href="/intro/menu/10021/contents/40019/contents.do">이용시간/휴관일</a> </li> 
+   <li><a href="/intro/menu/10022/contents/40020/contents.do">회원가입</a> </li> 
+   <li><a href="/intro/menu/10023/contents/40021/contents.do">도서대출/반납/예약</a> </li> 
+   <li><a href="/intro/menu/12865/contents/40001/contents.do">상호대차서비스</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/12865/contents/40001/contents.do">상호대차서비스</a> </li> 
+     <li><a href="/intro/menu/12866/contents/40381/contents.do">대학상호대차서비스</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10028/contents/40003/contents.do">책배달서비스</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/10028/contents/40003/contents.do">책바다</a> </li> 
+     <li><a href="/intro/menu/10029/contents/40004/contents.do">내 생애 첫 도서관</a> </li> 
+     <li><a href="/intro/menu/10030/contents/40005/contents.do">두루두루</a> </li> 
+     <li><a href="/intro/menu/205707/contents/41012/contents.do">책나래</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/206007/contents/41520/contents.do">전자도서관</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/206007/contents/41520/contents.do">전자도서관 서비스</a> </li> 
+     <li><a href="/intro/menu/10031/contents/40008/contents.do">전자도서관 이용안내</a> 
+      <ul class="MkTab"> 
+       <li><a href="/intro/menu/10031/contents/40008/contents.do">전자책</a></li> 
+       <li><a href="/intro/menu/10032/contents/40009/contents.do">오디오북</a></li> 
+       <li><a href="/intro/menu/206971/contents/41980/contents.do">경기도사이버도서관</a></li> 
+       <li><a href="/intro/menu/10033/contents/40010/contents.do">DBpia</a></li> 
+       <li><a href="/intro/menu/206067/contents/41540/contents.do">KISS</a></li> 
+       <li><a href="/intro/menu/10034/contents/40011/contents.do">전자잡지</a></li> 
+       <li><a href="/intro/menu/206069/contents/41542/contents.do">어학강좌</a></li> 
+       <li><a href="/intro/menu/206068/contents/41541/contents.do">뮤직 라이브러리</a></li> 
+      </ul> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10027/contents/40002/contents.do">모바일앱서비스</a> </li> 
+   <li><a href="/intro/menu/207039/contents/40900/contents.do">북스타트 사업</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/207039/contents/40900/contents.do">신청안내</a> </li> 
+     <li><a href="/intro/menu/207040/program/30209/bookStartApply.do">책꾸러미 신청하기</a> </li> 
+    </ul> </li> 
+  </ul> </li> 
+ <li id="gnb4"><a href="/intro/menu/10046/program/30012/calendar.do">문화마당</a> 
+  <ul> 
+   <li><a href="/intro/menu/10046/program/30012/calendar.do">도서관달력</a> </li> 
+   <li><a href="/intro/menu/10047/contents/41840/contents.do">수강신청</a> </li> 
+   <li><a href="/intro/menu/206169/contents/41600/contents.do">독서동아리</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/206169/contents/41600/contents.do">독서동아리소개</a> </li> 
+     <li><a href="/intro/menu/12698/program/30127/readingClubNewList.do">독서동아리등록및검색</a> </li> 
+     <li><a href="/intro/menu/206171/bbs/21721/bbsPostList.do">독서동아리게시판</a> 
+      <ul class="MkTab"> 
+       <li><a href="/intro/menu/206171/bbs/21721/bbsPostList.do">새소식</a></li> 
+       <li><a href="/intro/menu/206172/bbs/21722/bbsPostList.do">지원신청</a></li> 
+       <li><a href="/intro/menu/206173/bbs/21723/bbsPostList.do">활동공유</a></li> 
+      </ul> </li> 
+     <li><a href="/intro/menu/206174/bbs/21641/bbsPostList.do">독서동아리도움자료</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/207253/contents/42290/contents.do">글짓기 그림대회</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/207253/contents/42290/contents.do">대회안내</a> 
+      <ul class="MkTab"> 
+       <li><a href="/intro/menu/207253/contents/42290/contents.do">글짓기(독후감공모전)</a></li> 
+       <li><a href="/intro/menu/207254/contents/42291/contents.do">그림대회</a></li> 
+      </ul> </li> 
+     <li><a href="/intro/menu/207252/bbs/21941/bbsPostList.do">대회(독후감공모전) 신청</a> </li> 
+     <li><a href="/intro/menu/207192/bbs/21901/bbsPostList.do">대회스케치</a> </li> 
+     <li><a href="/intro/menu/207194/bbs/21902/bbsPostList.do">대회수상작</a> 
+      <ul class="MkTab"> 
+       <li><a href="/intro/menu/207194/bbs/21902/bbsPostList.do">글짓기</a></li> 
+       <li><a href="/intro/menu/207195/bbs/21903/bbsPostList.do">그림대회</a></li> 
+      </ul> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/207391/contents/42420/contents.do">책 읽는 광장 도서관</a> </li> 
+   <li><a href="/intro/menu/207471/bbs/22021/bbsPostList.do">프로그램 제안</a> </li> 
+  </ul> </li> 
+ <li id="gnb5"><a href="/intro/menu/10048/bbs/20001/bbsPostList.do">이용자마당</a> 
+  <ul> 
+   <li><a href="/intro/menu/10048/bbs/20001/bbsPostList.do">공지사항</a> </li> 
+   <li><a href="/intro/menu/10049/bbs/20002/bbsPostList.do">자주하는질문</a> </li> 
+   <li><a href="/intro/menu/207091/bbs/21861/bbsPostList.do">상호대차 FAQ</a> </li> 
+   <li><a href="/intro/menu/10052/contents/40023/contents.do">신청서비스</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10052/contents/40023/contents.do">대관신청안내</a> </li> 
+     <li><a href="/intro/menu/10053/contents/40024/contents.do">견학신청안내</a> </li> 
+     <li><a href="/intro/menu/10054/contents/40025/contents.do">자원봉사신청안내</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10051/program/30016/surveyList.do">설문조사</a> </li> 
+   <li><a href="/intro/menu/10044/contents/40022/contents.do">희망도서 신청</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/10044/contents/40022/contents.do">신청안내</a> </li> 
+     <li><a href="/intro/menu/10045/program/30011/hopeBookApply.do">신청하기</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/206871/contents/41900/contents.do">지역서점 바로대출 신청</a> </li> 
+   <li><a href="/intro/menu/12868/contents/40382/contents.do">학술기관 상호대차 신청</a> 
+    <ul class="MkTab"> 
+     <li><a href="/intro/menu/12868/contents/40382/contents.do">신청안내</a> </li> 
+     <li><a href="/intro/menu/12869/program/30140/universityLoanApply.do">신청하기</a> </li> 
+    </ul> </li> 
+  </ul> </li> 
+ <li id="gnb6"><a href="/intro/menu/10055/program/30017/mypage/myInfo.do">내서재</a> 
+  <ul> 
+   <li><a href="/intro/menu/10055/program/30017/mypage/myInfo.do">기본정보</a> </li> 
+   <li><a href="/intro/menu/10060/program/30019/mypage/loanStatusList.do">도서이용정보</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10060/program/30019/mypage/loanStatusList.do">대출현황</a> </li> 
+     <li><a href="/intro/menu/10061/program/30020/mypage/reservationStatusList.do">예약현황</a> </li> 
+     <li><a href="/intro/menu/10062/program/30021/mypage/loanHistoryList.do">대출이력</a> </li> 
+     <li><a href="/intro/menu/10063/program/30022/mypage/bandLillStatusList.do">상호대차현황</a> </li> 
+     <li><a href="/intro/menu/12870/program/30140/mypage/universityLoanStatusList.do">대학상호대차현황</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10057/program/30018/mypage/basketGroupMain.do">나만의책장(관심도서)</a> </li> 
+   <li><a href="/intro/menu/10065/program/30011/mypage/hopeBookList.do">나의신청정보</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10065/program/30011/mypage/hopeBookList.do">희망자료신청조회</a> </li> 
+     <li><a href="/intro/menu/206696/program/30142/mypage/findSnApplyList.do">책 속의 보물 신청내역</a> </li> 
+     <li><a href="/intro/menu/207041/program/30209/mypage/bookStartApply.do">북스타트신청내역</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/206832/bbs/20009/mypage/bbsPostList.do">나의게시글</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/206832/bbs/20009/mypage/bbsPostList.do">묻고답하기</a> </li> 
+    </ul> </li> 
+   <li><a href="/intro/menu/10066/program/30023/mypage/myPopularBookList.do">도서추천서비스</a> 
+    <ul class="MkSub"> 
+     <li><a href="/intro/menu/10066/program/30023/mypage/myPopularBookList.do">공공도서관 인기도서</a> </li> 
+     <li><a href="/intro/menu/10067/program/30024/mypage/plusRecommendBookTopList.do">유형별 추천도서</a> </li> 
+     <li><a href="/intro/menu/12973/program/30145/mypage/aiBook.do">나만의 맞춤도서</a> </li> 
+     <li><a href="/intro/menu/12974/program/30146/mypage/customMyNewBookMain.do">나만의 신착도서</a> </li> 
+    </ul> </li> 
+  </ul> </li> 
+ <li id="gnb7"><a href="/intro/menu/10068/program/30025/memberLogin.do">회원정보</a> 
+  <ul> 
+   <li><a href="/intro/menu/10068/program/30025/memberLogin.do">로그인</a> </li> 
+   <li><a href="/intro/menu/10069/program/30026/memberFindId.do">아이디찾기</a> </li> 
+   <li><a href="/intro/menu/10070/program/30027/memberFindPwd.do">비밀번호재발급</a> </li> 
+   <li><a href="/intro/menu/10071/program/30030/memberJoinIntro.do">회원가입</a> </li> 
+  </ul> </li> 
+ <li id="gnb8"><a href="/intro/menu/10072/program/30031/mypage/memberModifyCheck.do">회원정보</a> 
+  <ul> 
+   <li><a href="/intro/menu/10072/program/30031/mypage/memberModifyCheck.do">회원정보수정</a> </li> 
+   <li><a href="/intro/menu/10073/program/30032/mypage/memberPwdModify.do">비밀번호변경</a> </li> 
+   <li><a href="/intro/menu/12697/program/30126/mypage/memberUntactRegularApply.do">온라인정회원신청</a> </li> 
+   <li><a href="/intro/menu/10074/program/30033/mypage/memberWithdraw.do">회원탈퇴</a> </li> 
+  </ul> </li> 
+ <li id="gnb9"><a href="/intro/menu/10075/program/30028/siteMap.do">홈페이지 이용안내</a> 
+  <ul> 
+   <li><a href="/intro/menu/10075/program/30028/siteMap.do">사이트맵</a> </li> 
+   <li><a href="/intro/menu/10076/contents/40026/contents.do">이용약관</a> </li> 
+   <li><a href="/intro/menu/10077/contents/40027/contents.do">개인정보처리방침</a> </li> 
+   <li><a href="/intro/menu/10078/contents/40028/contents.do">영상정보처리기기운영방침</a> </li> 
+   <li><a href="/intro/menu/10079/contents/40029/contents.do">이메일무단수집거부</a> </li> 
+   <li><a href="/intro/menu/10080/bbs/20081/bbsPostList.do">홈페이지오류신고</a> </li> 
+  </ul> </li> 
+ <li id="gnb10"><a href="/intro/menu/10010/program/30001/searchTotalResultList.do">홈페이지 통합검색</a> </li> 
+</ul>
+		
+				
+					<div class="mobileQRcode">
+						<img src="/cmmn/barcode/getQRCode.do?data=99999999999999&margin=0&width=120&height=120" alt="테스트사용자 모바일 회원증">
+					</div>
+				
+			
+		<div class="btnTotal"><a href="#view" title="전체메뉴 보기"><span><span class="blind">전체메뉴</span></span></a></div>
+	</nav>
+	<div id="submenuArea"></div>
+</header>
+	<div id="container" class="sub">
+		<div class="contentGroup">
+			
+<div id="lnbNav" class="navArea">
+	<h2>주메뉴</h2>
+	<ul id="lnb" class="lnb"></ul>
+</div>
+
+			<div id="contentcore">
+				
+<div class="naviandtitle">
+	<h3>페이지타이틀</h3>
+	<div class="navi"></div>
+	<div class="snsFarm">
+		<ul class="btnArea clearfix">
+			<li><a href="#snsGroup" id="sns" title="SNS 공유하기" class="snsShare"><span class="blind">SNS 공유하기</span></a>
+				<div id="snsGroup" class="snsList clearfix">
+					<a href="#sns1" id="sns1" onclick="javascript:fnShareFaceBook('https://snlib.go.kr/intro/menu/10045/program/30011/hopeBookApply.do'); return false;" title="페이스북에 공유하기 새창열림" class="snsFacebook"><span class="blind">페이스북</span></a>
+					<a href="#sns2" id="sns2" onclick="javascript:fnShareTwitter('https://snlib.go.kr/intro/menu/10045/program/30011/hopeBookApply.do'); return false;" title="트위터에 공유하기 새창열림" class="snsTwitter"><span class="blind">트위터</span></a>
+				</div>
+			</li>
+			<li class="mobileHide"><a href="#print" id="pprint" title="인쇄" class="snsPrint" onclick="javascript:fnPrintPopup('intro'); return false;"><span class="blind">현재화면 프린트.</span></a></li>
+		</ul>
+	</div>
+</div>
+				<div id="contents" class="contentArea">
+					
+<!--Forced tab Show Que-->
+<div class="tabNav">
+	<div class="virtSelect"><a href="#script">탭메뉴</a></div>
+	<ul class="tnb clearfix">
+		<li></li>
+	</ul>
+</div>
+<!--Forced tab Show Que-->
+					<!--Real Contents Start-->
+					<!--
+					<style>
+						#popup {position: absolute; left: 0; top: 140px; z-index: 30;}
+						.popImg li {float:left;}
+						.popImg li + li {margin-left: 5px;}
+						.close {float:left;width:100%; background-color:#3d3d3d; padding-bottom:8px;}
+						.close_l {float:left;}
+						.close_r {float:right;}
+						@media screen and (max-width: 1000px) {
+							#popup {top:100px; left: 50%;  margin-left: -45%;}
+							#popupM {margin-left: -230px;}
+						}
+						@media screen and (max-width: 480px) {
+							#popupM {width: 90%; margin-left: -45%;}
+						}
+					</style>
+
+					<div id="popup">
+						<div class="popImg">
+							<ul class="clearfix">
+								<li><a href="https://www.snlib.go.kr/ct/20001/bbsPostDetail.do?postIdx=190495"><img src="/include/image/popup/contents_popup_240401.jpg" alt="" width="100%"></a></li>
+							</ul>
+						</div>
+						<div class="close">
+							<div class="close_l"><a href="#" onclick="todaycloseWin();"><img src="/include/image/popup/today_close.gif" alt="오늘은 이 창을 열지 않습니다." name="chkbox" value="checkbox"></a></div>
+							<div class="close_r"><a href="#" onclick="closeWin();"><img src="/include/image/popup/close.gif" alt="창닫기"></a></div>
+						</div>
+					</div>
+
+					<script>
+						function setCookie(name,value,expirehours){
+							var todayDate = new Date();
+							todayDate.setHours(todayDate.getHours() + expirehours);
+							document.cookie = name + "=" + escape(value) + ";path=/; expires=" + todayDate.toGMTString() + ";"
+						}
+						function closeWin(){
+							document.getElementById('popup').style.display = "none";
+						}
+						function todaycloseWin(){
+							setCookie("ncookie","done",24);
+							document.getElementById('popup').style.display = "none";
+						}
+
+						cookiedata = document.cookie;
+						if ( cookiedata.indexOf("ncookie=done") < 0 ){
+							document.getElementById('popup').style.display = "block";
+						} else {
+							document.getElementById('popup').style.display = "none";
+						}
+					</script>
+					-->
+
+
+						<!-- ECIP START -->
+						
+						<!-- ECIP END -->
+
+					<form id="registForm" name="registForm" method="post">
+						<h4 class="htitle">신청자 정보</h4>
+						<div class="boardWrap">
+							<table class="board-view">
+								<caption>희망도서 신청자 정보</caption>
+								<colgroup>
+									<col style="width:20%">
+									<col>
+								</colgroup>
+								<tbody>
+									<tr>
+										<th scope="row">신청자명</th>
+										<td>테스트사용자</td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="mobileNo1">휴대폰번호</label></th>
+										<td>
+											<div class="numericForm clearfix">
+												<input type="hidden" name="handPhone" id="handPhone"/>
+												
+												
+												<select name="mobileNo1" id="mobileNo1" title="휴대폰번호 앞자리" class="form-ele short">
+													
+														<option value="010" selected="selected">010</option>
+													
+														<option value="011" >011</option>
+													
+														<option value="016" >016</option>
+													
+														<option value="017" >017</option>
+													
+														<option value="018" >018</option>
+													
+														<option value="019" >019</option>
+													
+												</select>
+												<span class="hyphen">-</span>
+												<input type="text" id="mobileNo2" name="mobileNo2" value="1234" maxlength="4" title="휴대폰번호 중간자리" class="form-ele short numeric" />
+												<span class="hyphen">-</span>
+												<input type="text" id="mobileNo3" name="mobileNo3" value="5678" maxlength="4" title="휴대폰번호 끝자리" class="form-ele short numeric" />
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">이메일</th>
+										<td><input type="text" id="email" name="email" title="이메일주소" value="masked@example.com" class="form-ele wide"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="summaryDesc mt30 mb05">
+							<div class="innerBox">
+								<h4 class="htitle">유의사항</h4>
+								<ul class="dot-list">
+									<li>도서 1인당 월 4권 (단, 1인 동일도서 중복 신청 시 1개관에만 구입)</li>
+									<li>신청하신 도서라도 '희망도서 선정제외' 기준에 의거 취소처리될 수 있습니다. '희망도서 선정제외' 기준의 상세한 내용은 희망자료신청의 신청안내에서 확인할 수 있습니다.</li>
+									<li>희망도서 신청은 성남시 관내도서관 정회원만 가능합니다.</li>
+									<li class="emp1">희망도서 신청시 문자발송을 위해 휴대폰번호를 꼭 확인하시기 바랍니다.</li>
+									<li class="emp1">희망도서는 자료를 이용할 당사자 본인의 ID로 신청하여 주시기 바라며, 자료이용자와 신청자가 다를 경우 대출이 거부될 수 있습니다. (어린이 ID를 사용하여 어린이가 열람불가한 일반도서가 신청되지 않도록 주의 부탁드립니다.)</li>
+									<li>전화번호
+										<ul class="dash-list">
+											<li>장서개발팀 : 031-729-8831~8833</li>
+											<li>수정도서관 : 031-743-9600</li>
+											<li>중원도서관 : 031-752-3913</li>
+										</ul>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<p><label for="smsReceiptYn"><input type="checkbox" name="smsReceiptYn" id="smsReceiptYn" value="Y" > 위의 유의사항을 확인하였으며 문자수신에 동의합니다.</label></p>
+
+						<h4 class="htitle">희망도서 정보</h4>
+						<div class="boardWrap">
+							<table class="board-view">
+								<caption>희망도서 정보</caption>
+								<col style="width:20%">
+								<col>
+								<tbody>
+									<tr>
+										<th scope="row"><label for="manageCode"><span class="essential">*</span> 신청도서관</label></th>
+										<td>
+											
+													<select name="manageCode" id="manageCode" class="form-ele auto">
+														<option value="">도서관선택</option>
+														
+															
+																	<option value="MA" >중앙도서관</option>
+																
+														
+															
+																	<option value="MD" >고등도서관</option>
+																
+														
+															
+																	<option value="MG" >구미도서관</option>
+																
+														
+															
+																	<!-- 논골도서관 신청불가 -->
+																
+														
+															
+																	<option value="MM" >무지개도서관</option>
+																
+														
+															
+																	<option value="MW" >복정도서관</option>
+																
+														
+															
+																	<option value="MB" >분당도서관</option>
+																
+														
+															
+																	<option value="MV" >서현도서관</option>
+																
+														
+															
+																	<option value="MO" >수내도서관</option>
+																
+														
+															
+																	<option value="MS" >수정도서관</option>
+																
+														
+															
+																	<option value="MU" >운중도서관</option>
+																
+														
+															
+																	<option value="MR" >위례도서관</option>
+																
+														
+															
+																	<option value="MJ" >중원도서관</option>
+																
+														
+															
+																	<option value="CK" >중원어린이도서관</option>
+																
+														
+															
+																	<!-- 책테마파크도서관 신청불가 -->
+																
+														
+															
+																	<option value="MP" >판교도서관</option>
+																
+														
+															
+																	<option value="PK" >판교어린이도서관</option>
+																
+														
+															
+																	<option value="MH" >해오름도서관</option>
+																
+														
+														<!--<option value="BJ">정자역작은도서관</option>-->
+													</select>
+												
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="title"><span class="essential">*</span> 희망도서명</label></th>
+										<td>
+											<div class="inpFullBtn">
+												<input type="text" id="title" name="title" value="" class="form-ele full">
+												<a href="btn" id="keywordBookSearchPopBtn" title="새창 열림" class="btn input">검색</a>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="author"><span class="essential">*</span> 저자</label></th>
+										<td><input type="text" id="author" name="author" value="" class="form-ele wide"></td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="publisher"><span class="essential">*</span> 발행자</label></th>
+										<td><input type="text" id="publisher" name="publisher" value="" class="form-ele wide"></td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="publishYear">발행연도</label></th>
+										<td><input type="text" id="publishYear" name="publishYear" value="" maxlength="4" class="form-ele auto numeric"></td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="eaIsbn">ISBN</label></th>
+										<td>
+											<div class="inpFullBtn">
+												<input type="text" id="eaIsbn" name="eaIsbn" value="" maxlength="100" class="form-ele full eng-mode">
+												<a href="btn" id="isbnBookSearchPopBtn" title="새창 열림" class="btn input">검색</a>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="price">가격</label></th>
+										<td><input type="text" id="price" name="price" value="" class="form-ele auto numeric"></td>
+									</tr>
+									<tr>
+										<th scope="row"><label for="recomOpinion">의견</label></th>
+										<td><textarea name="recomOpinion" id="recomOpinion"></textarea></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</form>
+					<div class="btnGroup">
+						<a href="#btn" id="registBtn" class="btn themeBtn">확인</a>
+					</div>
+					<!-- End Of the Real Contents-->
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- //container -->
+	
+
+<!-- footer -->
+<footer id="footer" class="public">
+	<div class="footerInner clearfix">
+		<ul class="fnb clearfix">
+			
+					<li><a href="/intro/40027/contents.do">개인정보처리방침</a></li>
+				
+			
+					<li class="mobileHide"><a href="/intro/40028/contents.do">영상정보처리기기운영&middot;관리방침</a></li>
+				
+			<li class="mobileHide"><a href="/intro/40026/contents.do" >이용약관</a></li>
+			<li class="mobileHide"><a href="/intro/40029/contents.do">이메일무단수집거부</a></li>
+			
+			
+				<li><a href="/intro/20081/bbsPostList.do">홈페이지오류신고</a></li>
+			
+		</ul>
+		<div class="familySite">
+			<select name="relateSite" id="relateSite" title="유관기관 바로가기 선택">
+				<option value="" selected="selected">유관기관 바로가기</option>
+				<option value="https://www.seongnam.go.kr/main.do">성남시청</option>
+				<option value="https://www.sujeong-gu.go.kr/main/index.asp">수정구청</option>
+				<option value="https://www.jungwongu.go.kr:10008/main/index.asp">중원구청</option>
+				<option value="https://www.bundang-gu.go.kr:10009/main/index.asp">분당구청</option>
+				<option value="https://learning.seongnam.go.kr/index.do">평생학습포털 배움숲</option>
+				
+			</select>
+			<a href="#go" id="btnRelateSite" class="btnGo" title="새 창 열림">GO</a>
+		</div>
+		<div class="fAdd">
+		  
+			<address>(우)13514  경기도 성남시 분당구 판교로 546(야탑동)  &emsp;<span class="tel">Tel. 031-729-4500</span> &emsp;<span class="fax"> Fax. 031-729-4629</span></address>
+			
+			<cite>Copyright &copy; 성남시도서관사업소. All Rights Reserved.</cite>
+		</div>
+		
+				<div class="mark_wa">
+					<!-- <a href="http://www.webwatch.or.kr/Situation/WA_Situation.html?MenuCD=110" title="새창에서 열림" target="_blank"><img src="/include/image/common/mark_wa.png" alt="과학기술정보통신부 WEB ACCESSIBILITY(웹접근성인증마크)" /></a> -->
+										<a href="http://www.webwatch.or.kr/Situation/WA_Situation.html?page=1&skey=1&sval=성남시&npp=9&MenuCD=110" title="새창에서 열림" target="_blank"><img src="/include/image/common/mark_wa.png" alt="과학기술정보통신부 WEB ACCESSIBILITY(웹접근성인증마크)" /></a>
+
+				</div>
+			
+	</div>
+	<div><p id="post-result"></p></div>
+</footer>
+<a href="#body" id="btnTopScroll" title="상단으로 이동"><img src="/include/image/button/btn_top.png" alt="TOP"></a>
+<!-- //footer -->
+
+<script type="text/javascript">
+		$(function(){
+			$("#btnRelateSite").click(function(){
+				var url = $("#relateSite").val();
+				if(!$("#relateSite").val()){
+						alert("관련기관을 선택하세요.");
+						$("#relateSite").focus();
+				}else{
+						window.open(url,"_blank");
+				}
+				return false;
+			});
+			$("#btnTopScroll").click(function(){
+				$("body,html").animate({scrollTop:0},300);
+				return false;
+			});
+			$(window).scroll(function(){
+				var scT = $(this).scrollTop();
+				if (scT > 1) {
+						$("#btnTopScroll").css("display","block");
+				}else {
+						$("#btnTopScroll").css("display","none");
+				}
+			});
+
+			const siteCd = "intro";
+			$("body").addClass(siteCd);
+		});
+
+
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129102307-1"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+		  gtag('config', 'UA-129102307-1');
+		</script>
+	
+
+<iframe name="hiddenFrame" id="hiddenFrame" title="빈프레임" class="blind"></iframe>
+
+</div>
+<!-- //wrap -->
+</body>
+</html>
