@@ -316,7 +316,7 @@
         :body (str
                 "<html><body>"
                 "<input type='hidden' name='giveLibCode' value='141052'/>"
-                "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+                "<select name='userKey'><option value='1060272451'>testuser</option></select>"
                 "</body></html>")}]
       (fn [calls]
         (let [result (core/interlibrary-loan-request! client {:manage-code "MB"
@@ -339,7 +339,7 @@
         :body (str
                 "<html><body>"
                 "<input type='hidden' name='giveLibCode' value='141052'/>"
-                "<select name='userKey'><option value='1060272451'>ruseel</option></select>"
+                "<select name='userKey'><option value='1060272451'>testuser</option></select>"
                 "</body></html>")}
        {:status 200
         :headers {"content-type" "text/html"}
@@ -512,12 +512,12 @@
         (let [result (core/hope-book-request! client {:request {:title "테스트 도서"
                                                                 :author "홍길동"
                                                                 :mobile-no1 "010"
-                                                                :mobile-no2 "3764"
-                                                                :mobile-no3 "0262"}})]
+                                                                :mobile-no2 "1234"
+                                                                :mobile-no3 "5678"}})]
           (is (= "010-1234-5678" (get-in result [:data :prepared-payload "handPhone"])))
           (is (= "010" (get-in result [:data :prepared-payload "mobileNo1"])))
-          (is (= "3764" (get-in result [:data :prepared-payload "mobileNo2"])))
-          (is (= "0262" (get-in result [:data :prepared-payload "mobileNo3"]))))))))
+          (is (= "1234" (get-in result [:data :prepared-payload "mobileNo2"])))
+          (is (= "5678" (get-in result [:data :prepared-payload "mobileNo3"]))))))))
 
 (deftest hope-book-request-submit-uses-har-contract-when-allowed
   (let [client (core/create-client)
@@ -556,7 +556,7 @@
           (is (= "32000" (get-in (second @calls) [:form-params "price"])))
           (is (= "Y" (get-in (second @calls) [:form-params "smsReceiptYn"])))
           (is (= "010-1234-5678" (get-in (second @calls) [:form-params "handPhone"])))
-          (is (= "3764" (get-in (second @calls) [:form-params "mobileNo2"])))
+          (is (= "1234" (get-in (second @calls) [:form-params "mobileNo2"])))
           (is (= "https://snlib.go.kr/intro/menu/10045/program/30011/hopeBookApply.do"
                  (get-in (second @calls) [:headers "Referer"]))))))))
 
