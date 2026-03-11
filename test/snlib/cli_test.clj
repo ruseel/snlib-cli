@@ -16,6 +16,7 @@
                   (cli-var 'load-session-data) (fn [] {})
                   (cli-var 'load-cookie-store) (fn [_] :cookie-store)
                   (cli-var 'save-session!) (fn [_ _] nil)
+                  (cli-var 'load-env-credentials) (fn [] {})
                   (cli-var 'load-credentials) (fn [] {})
                   (cli-var 'save-credentials!) (fn [_] nil)
                   #'core/create-client (fn [_opts] :client)}]
@@ -68,6 +69,59 @@
          (cli/run-cli ["login" "--user-id" "bob" "--password" "secret" "--save-credentials"])))
     (is (= 1 (count @saved)))
     (is (= "bob" (get-in @saved [0 :user-id])))))
+
+(deftest run-cli-uses-login-credentials-in-priority-order
+  (let [captured-opts (atom nil)]
+    (with-cli-redefs
+      {(cli-var 'load-env-credentials) (constantly {:user-id "env-user"
+                                                    :password "env-pass"})
+       (cli-var 'load-credentials) (constantly {:user-id "file-user"
+                                                :password "file-pass"})
+       (cli-var 'commands)
+       {"login" (fn [_client opts]
+                  (reset! captured-opts opts)
+                  {:ok? true :status :ok :data {} :error nil})}}
+      #(let [result (cli/run-cli ["login" "--user-id" "cli-user" "--password" "cli-pass"])]
+         (is (= 0 (:exit-code result)))
+         (is (= {:user-id "cli-user"
+                 :password "cli-pass"
+                 :return-url nil}
+                @captured-opts))))))
+
+(deftest run-cli-uses-env-credentials-before-saved-file
+  (let [captured-opts (atom nil)]
+    (with-cli-redefs
+      {(cli-var 'load-env-credentials) (constantly {:user-id "env-user"
+                                                    :password "env-pass"})
+       (cli-var 'load-credentials) (constantly {:user-id "file-user"
+                                                :password "file-pass"})
+       (cli-var 'commands)
+       {"login" (fn [_client opts]
+                  (reset! captured-opts opts)
+                  {:ok? true :status :ok :data {} :error nil})}}
+      #(let [result (cli/run-cli ["login"])]
+         (is (= 0 (:exit-code result)))
+         (is (= {:user-id "env-user"
+                 :password "env-pass"
+                 :return-url nil}
+                @captured-opts))))))
+
+(deftest run-cli-falls-back-to-saved-credentials-when-env-missing
+  (let [captured-opts (atom nil)]
+    (with-cli-redefs
+      {(cli-var 'load-env-credentials) (constantly {:user-id "" :password nil})
+       (cli-var 'load-credentials) (constantly {:user-id "file-user"
+                                                :password "file-pass"})
+       (cli-var 'commands)
+       {"login" (fn [_client opts]
+                  (reset! captured-opts opts)
+                  {:ok? true :status :ok :data {} :error nil})}}
+      #(let [result (cli/run-cli ["login"])]
+         (is (= 0 (:exit-code result)))
+         (is (= {:user-id "file-user"
+                 :password "file-pass"
+                 :return-url nil}
+                @captured-opts))))))
 
 (deftest run-cli-returns-error-for-unknown-command
   (let [result (cli/run-cli ["unknown-cmd"])]

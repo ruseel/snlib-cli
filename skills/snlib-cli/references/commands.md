@@ -3,7 +3,7 @@
 ## Login
 
 ```bash
-./scripts/snlib-cli login --pretty
+SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --pretty
 ```
 
 ## Search

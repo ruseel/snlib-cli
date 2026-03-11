@@ -126,6 +126,17 @@
         (catch Exception _
           {})))))
 
+(defn- load-env-credentials
+  []
+  {:user-id (System/getenv "SNLIB_USER")
+   :password (System/getenv "SNLIB_PASSWORD")})
+
+(defn- first-non-blank
+  [& values]
+  (some #(when-not (str/blank? (or % ""))
+           %)
+        values))
+
 (defn- save-credentials!
   [{:keys [user-id password]}]
   (let [credentials-file (io/file credentials-file-path)
@@ -221,9 +232,11 @@
 
 (def ^:private command-help
   {"login"
-   ["--user-id USER_ID (required unless saved credentials exist)"
-    "--password PASSWORD (required unless saved credentials exist)"
+   ["--user-id USER_ID (highest priority login user ID)"
+    "--password PASSWORD (highest priority login password)"
     (str "--return-url RETURN_URL (default: " default-login-return-url ")")
+    (str "Credential precedence: CLI options > env SNLIB_USER/SNLIB_PASSWORD > "
+         credentials-file-path)
     "--save-credentials (default: false)"]
 
    "search-books"
@@ -331,6 +344,7 @@
        "Long options:\n"
        summary "\n\n"
        "Examples:\n"
+       "  SNLIB_USER=myid SNLIB_PASSWORD=secret snlib login\n"
        "  snlib login --user-id myid --password secret\n"
        "  snlib search-books --keyword franklin --manage-code MA --page 1 --per-page 10\n"
        "  snlib loan-status --include-history\n"
@@ -350,9 +364,14 @@
   [command opts]
   (case command
     "login"
-    (let [stored (load-credentials)]
-      {:user-id (or (:user-id opts) (:user-id stored))
-       :password (or (:password opts) (:password stored))
+    (let [env-credentials (load-env-credentials)
+          stored (load-credentials)]
+      {:user-id (first-non-blank (:user-id opts)
+                                 (:user-id env-credentials)
+                                 (:user-id stored))
+       :password (first-non-blank (:password opts)
+                                  (:password env-credentials)
+                                  (:password stored))
        :return-url (:return-url opts)})
 
     "search-books"

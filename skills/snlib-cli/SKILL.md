@@ -11,7 +11,7 @@ Use this skill to run Seongnam Library commands quickly from the CLI.
 
 ```bash
 # first-time login
-./scripts/snlib-cli login --pretty
+SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --pretty
 
 # common read-only checks
 ./scripts/snlib-cli my-info --pretty
@@ -34,11 +34,11 @@ Read `references/commands.md` for command patterns and end-to-end flows.
 - Start with read-only commands before any write action.
 - Write actions require explicit confirmation flags:
   - `--submit --allow-submit`
-- Credentials and session data are stored under `~/.config/snlib-cli/`.
+- In skills, pass credentials via `SNLIB_USER` and `SNLIB_PASSWORD` environment variables.
+- Session data is stored under `~/.config/snlib-cli/`.
 
 
 ## Troubleshooting
 
 If 3 hours passed, authentication can fail. then you can re-login.
-
 
