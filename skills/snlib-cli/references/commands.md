@@ -3,28 +3,28 @@
 ## Login
 
 ```bash
-SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --pretty
+SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" {baseDir}/scripts/snlib-cli login --pretty
 ```
 
 ## Search
 
 ```bash
-./scripts/snlib-cli search-books --keyword "키워드" --pretty
-./scripts/snlib-cli search-books --keyword "키워드" --manage-code MA --page 1 --per-page 10 --pretty
+{baseDir}/scripts/snlib-cli search-books --keyword "키워드" --pretty
+{baseDir}/scripts/snlib-cli search-books --keyword "키워드" --manage-code MA --page 1 --per-page 10 --pretty
 ```
 
 ## My page (read-only)
 
 ```bash
-./scripts/snlib-cli my-info --pretty
-./scripts/snlib-cli loan-status --pretty
-./scripts/snlib-cli loan-history --pretty
-./scripts/snlib-cli reservation-status --pretty
-./scripts/snlib-cli interloan-status --pretty
-./scripts/snlib-cli hope-book-list --pretty
-./scripts/snlib-cli hope-book-detail --rec-key 1938103961 --pretty
-./scripts/snlib-cli basket-list --pretty
-./scripts/snlib-cli basket-list --group-key 13840 --pretty
+{baseDir}/scripts/snlib-cli my-info --pretty
+{baseDir}/scripts/snlib-cli loan-status --pretty
+{baseDir}/scripts/snlib-cli loan-history --pretty
+{baseDir}/scripts/snlib-cli reservation-status --pretty
+{baseDir}/scripts/snlib-cli interloan-status --pretty
+{baseDir}/scripts/snlib-cli hope-book-list --pretty
+{baseDir}/scripts/snlib-cli hope-book-detail --rec-key 1938103961 --pretty
+{baseDir}/scripts/snlib-cli basket-list --pretty
+{baseDir}/scripts/snlib-cli basket-list --group-key 13840 --pretty
 ```
 
 ## Write operations (explicit submit)
@@ -32,7 +32,7 @@ SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --
 ### Interloan request
 
 ```bash
-./scripts/snlib-cli interloan-request \
+{baseDir}/scripts/snlib-cli interloan-request \
   --manage-code MA \
   --reg-no CEM000334796 \
   --apl-lib-code 141484 \
@@ -42,7 +42,7 @@ SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --
 ### Hope-book request
 
 ```bash
-./scripts/snlib-cli hope-book-request \
+{baseDir}/scripts/snlib-cli hope-book-request \
   --request-edn '{:title "도서명" :author "저자" :publisher "출판사" :publishYear "2025" :eaIsbn "9788966264896" :price "54000" :email "user@example.com" :smsReceiptYn "Y" :handPhone "010-1234-5678"}' \
   --submit --allow-submit --pretty
 ```
@@ -50,11 +50,11 @@ SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" ./scripts/snlib-cli login --
 ## GitHub/deps override
 
 ```bash
-SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli my-info --pretty
-SNLIB_GITHUB_REPO=https://github.com/example/snlib-cli SNLIB_GIT_TAG=v0.2.0 ./scripts/snlib-cli loan-status --pretty
+SNLIB_GIT_TAG=v0.2.0 {baseDir}/scripts/snlib-cli my-info --pretty
+SNLIB_GITHUB_REPO=https://github.com/example/snlib-cli SNLIB_GIT_TAG=v0.2.0 {baseDir}/scripts/snlib-cli loan-status --pretty
 
 # full -Sdeps override (for dev/testing)
 SSH_URL="$(git remote get-url origin)"
 SNLIB_DEPS_EDN="{:deps {io.github.ruseel/snlib-cli {:git/url \"$SSH_URL\" :git/tag \"20260304\" :git/sha \"7383431969192e7c875904a7960726add6cf3c0b\"}}}" \
-  ./scripts/snlib-cli --help
+  {baseDir}/scripts/snlib-cli --help
 ```

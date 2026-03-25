@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  update-launcher-pin <tag> [sha]
+
+Examples:
+  update-launcher-pin 20260304
+  update-launcher-pin v0.2.0 7383431969192e7c875904a7960726add6cf3c0b
+
+Updates skills/snlib-cli/scripts/snlib-cli so its default SNLIB_GIT_TAG and
+SNLIB_GIT_SHA point at the selected release commit.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  usage >&2
+  exit 2
+fi
+
+tag="$1"
+sha="${2:-$(git rev-parse "${tag}^{commit}")}"
+
+git rev-parse --verify "${tag}^{commit}" >/dev/null
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+launcher="${script_dir}/snlib-cli"
+
+python3 - "$launcher" "$tag" "$sha" <<'PY'
+from pathlib import Path
+import sys
+
+launcher = Path(sys.argv[1])
+tag = sys.argv[2]
+sha = sys.argv[3]
+
+text = launcher.read_text()
+lines = []
+for line in text.splitlines():
+    if line.startswith('SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-'):
+        lines.append(f'SNLIB_GIT_TAG="${{SNLIB_GIT_TAG:-{tag}}}"')
+    elif line.startswith('SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-'):
+        lines.append(f'SNLIB_GIT_SHA="${{SNLIB_GIT_SHA:-{sha}}}"')
+    else:
+        lines.append(line)
+
+launcher.write_text("\n".join(lines) + "\n")
+PY
+
+printf 'Updated %s\n' "$launcher"
+printf '  SNLIB_GIT_TAG=%s\n' "$tag"
+printf '  SNLIB_GIT_SHA=%s\n' "$sha"
