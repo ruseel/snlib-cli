@@ -42,7 +42,8 @@
     :else
     (let [sha (or sha (sh! "git" "rev-parse" (str tag "^{commit}")))
           _ (sh! "git" "rev-parse" "--verify" (str tag "^{commit}"))
-          launcher (io/file (.getParentFile (io/file *file*)) "snlib-cli")
+          repo-root (.getParentFile (.getParentFile (io/file *file*)))
+          launcher (io/file repo-root "skills" "snlib-cli" "scripts" "snlib-cli")
           updated (-> (slurp launcher)
                       (str/replace #"(?m)^SNLIB_GIT_TAG=.*$"
                                    (quoted (format "SNLIB_GIT_TAG=\"${SNLIB_GIT_TAG:-%s}\"" tag)))
