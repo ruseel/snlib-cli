@@ -45,14 +45,14 @@
           (is (= {:title "삼국지 1"
                   :author "나관중 지음"
                   :publisher "가상출판사"
-                  :publish-year "2022"
+                  :publish-year "2024"
                   :manage-code "MG"
                   :reg-no "FIC000000101"}
                  (get-in result [:data :items 0])))
           (is (= {:title "삼국지 1"
                   :author "나관중 지음"
                   :publisher "가상출판사"
-                  :publish-year "2022"
+                  :publish-year "2024"
                   :manage-code "MB"
                   :reg-no "FIC000000110"}
                  (get-in result [:data :items 9]))))))))
@@ -69,7 +69,7 @@
           (is (= [{:title "삼국지 2, 적벽대전"
                    :author "나관중 지음 ; 테스트번역 옮김"
                    :publisher "가상출판사"
-                   :publish-year "2025"
+                   :publish-year "2024"
                    :manage-code "MP"
                    :reg-no "FIC000000202"}]
                  (get-in result [:data :items]))))))))
@@ -77,17 +77,17 @@
 (deftest hope-book-request-uses-full-page-fixture-defaults
   (let [client (core/create-client)
         page-html (fixture-html "hope-book-request/page.html")
-        submit-html (fixture-html "hope-book-request/submit-old-interview-2.html")]
+        submit-html (fixture-html "hope-book-request/submit-samgukji-2.html")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body page-html}
        {:status 200 :headers {"content-type" "text/html"} :body submit-html}]
       (fn [calls]
         (let [result (core/hope-book-request! client {:manage-code "MU"
                                                       :request {:title "삼국지 2"
-                                                                :author "피터사이벨"
+                                                                :author "나관중"
                                                                 :publisher "가상출판사"
-                                                                :publish-year "2025"
-                                                                :ea-isbn "9788966264988"
+                                                                :publish-year "2024"
+                                                                :ea-isbn "9780000000002"
                                                                 :price "25600"
                                                                 :sms-receipt-yn "Y"}
                                                       :submit? true
@@ -120,8 +120,8 @@
 
 (deftest interloan-request-uses-full-popup-fixture-submit-response
   (let [client (core/create-client)
-        popup-html (fixture-html "interloan-request/popup-japan-book.html")
-        submit-html (fixture-html "interloan-request/submit-japan-book.html")]
+        popup-html (fixture-html "interloan-request/popup-samgukji-1.html")
+        submit-html (fixture-html "interloan-request/submit-samgukji-1.html")]
     (with-request-stub
       [{:status 200 :headers {"content-type" "text/html"} :body popup-html}
        {:status 200 :headers {"content-type" "text/html"} :body submit-html}]
