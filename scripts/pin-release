@@ -1,7 +1,7 @@
-#!/usr/bin/env -S clojure -M
+#!/usr/bin/env bb
 
-(require '[clojure.java.io :as io]
-         '[clojure.java.shell :refer [sh]]
+(require '[babashka.fs :as fs]
+         '[babashka.process :as p]
          '[clojure.string :as str])
 
 (defn usage []
@@ -11,9 +11,11 @@
   (println "Updates skills/snlib-cli/scripts/snlib-cli so its default")
   (println "SNLIB_GIT_TAG and SNLIB_GIT_SHA point at the selected release commit."))
 
-(defn sh!
+(defn run!
   [& args]
-  (let [{:keys [exit out err]} (apply sh args)]
+  (let [{:keys [exit out err]} (apply p/shell {:out :string
+                                               :err :string}
+                                      args)]
     (when-not (zero? exit)
       (binding [*out* *err*]
         (print err))
@@ -37,16 +39,15 @@
 
     :else
     (let [target (or sha "HEAD")
-          sha (sh! "git" "rev-parse" "--verify" (str target "^{commit}"))
-          repo-root (.getParentFile (.getParentFile (io/file *file*)))
-          launcher (io/file repo-root "skills" "snlib-cli" "scripts" "snlib-cli")
+          sha (run! "git" "rev-parse" "--verify" (str target "^{commit}"))
+          repo-root (-> *file* fs/path fs/parent fs/parent fs/normalize)
+          launcher (fs/path repo-root "skills" "snlib-cli" "scripts" "snlib-cli")
           updated (-> (slurp launcher)
                       (str/replace #"(?m)^SNLIB_GIT_TAG=.*$"
                                    (quoted (format "SNLIB_GIT_TAG=\"${SNLIB_GIT_TAG:-%s}\"" tag)))
                       (str/replace #"(?m)^SNLIB_GIT_SHA=.*$"
                                    (quoted (format "SNLIB_GIT_SHA=\"${SNLIB_GIT_SHA:-%s}\"" sha))))]
       (spit launcher updated)
-      (println (str "Created and pushed tag " tag))
-      (println (str "Updated " (.getPath launcher)))
+      (println (str "Updated " launcher))
       (println (str "  SNLIB_GIT_TAG=" tag))
       (println (str "  SNLIB_GIT_SHA=" sha)))))

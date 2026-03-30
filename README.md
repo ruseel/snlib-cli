@@ -11,7 +11,7 @@ The published skill does not bundle compiled binaries or source snapshots. The l
 Before release:
 
 1. Update `skills/snlib-cli/scripts/snlib-cli` so `SNLIB_GITHUB_REPO` points to the public clone URL you want ClawHub users to fetch.
-2. Run the pin helper to create and push the release tag, then update the skill launcher defaults:
+2. Run the Babashka pin helper to update the skill launcher defaults:
 
 ```bash
 scripts/pin-release <tag>
@@ -43,7 +43,7 @@ Equivalent raw publish command:
 clawhub skill publish ./skills/snlib-cli --slug snlib-cli --name "snlib-cli" --version <version> --tags latest
 ```
 
-`scripts/pin-release` creates and pushes the requested git tag, then rewrites the default `SNLIB_GIT_TAG` and `SNLIB_GIT_SHA` values in the skill launcher.
+`scripts/pin-release` is a Babashka script that rewrites the default `SNLIB_GIT_TAG` and `SNLIB_GIT_SHA` values in the skill launcher.
 `scripts/clawhub-release.bb` materializes `references/lib-code.md` plus `references/manage-code.md` inside `skills/snlib-cli/` from the canonical EDN files in `src/snlib/`.
 
 ## Local Usage
