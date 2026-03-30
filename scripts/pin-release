@@ -42,12 +42,13 @@
           sha (run! "git" "rev-parse" "--verify" (str target "^{commit}"))
           repo-root (-> *file* fs/path fs/parent fs/parent fs/normalize)
           launcher (fs/path repo-root "skills" "snlib-cli" "scripts" "snlib-cli")
-          updated (-> (slurp launcher)
+          launcher-path (str launcher)
+          updated (-> (slurp launcher-path)
                       (str/replace #"(?m)^SNLIB_GIT_TAG=.*$"
                                    (quoted (format "SNLIB_GIT_TAG=\"${SNLIB_GIT_TAG:-%s}\"" tag)))
                       (str/replace #"(?m)^SNLIB_GIT_SHA=.*$"
-                                   (quoted (format "SNLIB_GIT_SHA=\"${SNLIB_GIT_SHA:-%s}\"" sha))))]
-      (spit launcher updated)
-      (println (str "Updated " launcher))
+                                    (quoted (format "SNLIB_GIT_SHA=\"${SNLIB_GIT_SHA:-%s}\"" sha))))]
+      (spit launcher-path updated)
+      (println (str "Updated " launcher-path))
       (println (str "  SNLIB_GIT_TAG=" tag))
       (println (str "  SNLIB_GIT_SHA=" sha)))))
