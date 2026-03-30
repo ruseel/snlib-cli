@@ -3,12 +3,12 @@ set -euo pipefail
 
 # NOTE: This default repo URL still points at a maintainer-specific SSH remote.
 # Replace it with a public clone URL before publishing to ClawHub.
-SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-git@github-ruseel:ruseel/2026-02-27-snlib-cli.git}"
+SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-https://github.com/ruseel/snlib-cli.git}"
 # This launcher intentionally fetches source via tools.deps instead of bundling
 # compiled artifacts into the skill. That keeps the published skill small and
 # reviewable, but the maintainer must repin these values for each release.
-SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-20260304}"
-SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-7383431969192e7c875904a7960726add6cf3c0b}"
+SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-20260330}"
+SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-c1c8d0c07449b5d926340d728a960a7669b1011b}"
 # Optional complete -Sdeps override for dev/testing.
 # Example: SNLIB_DEPS_EDN='{:deps {...}}'
 SNLIB_DEPS_EDN="${SNLIB_DEPS_EDN:-}"
