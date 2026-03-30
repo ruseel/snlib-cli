@@ -35,7 +35,7 @@ Read `{baseDir}/references/commands.md` for command patterns and end-to-end flow
 - Start with read-only commands before any write action.
 - Write actions require explicit confirmation flags:
   - `--submit --allow-submit`
-- In skills, pass credentials via `SNLIB_USER` and `SNLIB_PASSWORD` environment variables.
+- Pass credentials via the required `SNLIB_USER` and `SNLIB_PASSWORD` environment variables declared in the metadata header.
 - Session data is stored under `~/.config/snlib-cli/`.
 
 

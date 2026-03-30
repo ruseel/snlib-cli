@@ -1,43 +1,58 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+set_default() {
+  local var_name="$1"
+  local default_value="$2"
+  if [[ -z "${!var_name+x}" || -z "${!var_name}" ]]; then
+    printf -v "$var_name" '%s' "$default_value"
+  fi
+}
+
+prepend_path_if_exists() {
+  local bin_dir="$1"
+  if [[ -d "$bin_dir" ]]; then
+    export PATH="$bin_dir:$PATH"
+  fi
+}
+
+ensure_cmd() {
+  local cmd="$1"
+  local install_hint="$2"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "ERROR: $cmd command not found. $install_hint" >&2
+    exit 127
+  fi
+}
+
 # NOTE: This default repo URL still points at a maintainer-specific SSH remote.
 # Replace it with a public clone URL before publishing to ClawHub.
-SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-git@github-ruseel:ruseel/2026-02-27-snlib-cli.git}"
+set_default SNLIB_GITHUB_REPO "git@github-ruseel:ruseel/2026-02-27-snlib-cli.git"
 # This launcher intentionally fetches source via tools.deps instead of bundling
 # compiled artifacts into the skill. That keeps the published skill small and
 # reviewable, but the maintainer must repin these values for each release.
-SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-20260304}"
-SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-7383431969192e7c875904a7960726add6cf3c0b}"
+set_default SNLIB_GIT_TAG "20260304"
+set_default SNLIB_GIT_SHA "7383431969192e7c875904a7960726add6cf3c0b"
 # Optional complete -Sdeps override for dev/testing.
 # Example: SNLIB_DEPS_EDN='{:deps {...}}'
-SNLIB_DEPS_EDN="${SNLIB_DEPS_EDN:-}"
-SNLIB_USE_LOCAL_CHECKOUT="${SNLIB_USE_LOCAL_CHECKOUT:-1}"
+set_default SNLIB_DEPS_EDN ""
+set_default SNLIB_USE_LOCAL_CHECKOUT "1"
 
 # OpenClaw runs may not load interactive shell PATH.
 # Auto-discover local installs used in this workspace.
 if ! command -v java >/dev/null 2>&1; then
   if [[ -x "$HOME/.local/jdk/bin/java" ]]; then
-    export JAVA_HOME="${JAVA_HOME:-$HOME/.local/jdk}"
-    export PATH="$JAVA_HOME/bin:$PATH"
+    set_default JAVA_HOME "$HOME/.local/jdk"
+    prepend_path_if_exists "$JAVA_HOME/bin"
   fi
 fi
 
 if ! command -v clojure >/dev/null 2>&1; then
-  if [[ -x "$HOME/.local/bin/clojure" ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
+  prepend_path_if_exists "$HOME/.local/bin"
 fi
 
-if ! command -v java >/dev/null 2>&1; then
-  echo "ERROR: java command not found. Install a JDK first (or set JAVA_HOME/PATH)." >&2
-  exit 127
-fi
-
-if ! command -v clojure >/dev/null 2>&1; then
-  echo "ERROR: clojure command not found. Install Clojure CLI first (or add ~/.local/bin to PATH)." >&2
-  exit 127
-fi
+ensure_cmd java "Install a JDK first (or set JAVA_HOME/PATH)."
+ensure_cmd clojure "Install Clojure CLI first (or add ~/.local/bin to PATH)."
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "${script_dir}/../../.." && pwd)"
