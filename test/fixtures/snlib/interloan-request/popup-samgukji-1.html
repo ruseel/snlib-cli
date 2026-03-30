@@ -1,0 +1,399 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>상호대차 신청</title>
+<link href="/include/css/intro/layout.css" rel="stylesheet" type="text/css" />
+<link href="/include/css/common/popup.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/include/js/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="/include/js/common.js"></script>
+<script type="text/javascript" src="/include/booksearch/js/kolaseek.js"></script>
+<script type="text/javascript">
+	$(function(){
+		$("#applyBtn").click(fnApply);
+		$("#cancelBtn").click(fnCancel);
+	});
+
+	function fnApply(){
+		var form = document.registForm;
+
+		if(isEmpty(form.aplLibCode.value)){
+			alert("수령도서관을 선택하세요.");
+			form.aplLibCode.focus();
+			return false;
+		}
+
+// 		if(form.aplLibCode.value == "141308"){
+// 			alert("도서관 사정상 도서수령이 지연될 수 있으니 급한 도서는 인근 도서관(분당, 구미, 정자역, 정자청, 구미1동 등)을 이용해 주세요.");
+// 		}
+
+		if(confirm("상호대차 신청을 하시겠습니까?")){
+		  	form.action = "/intro/doorae/bandLillApplyPopProc.do";
+		  	form.submit();
+		}
+		return false;
+	}
+
+	function fnCancel(){
+		window.close();
+		return false;
+	}
+	</script>
+</head>
+<body>
+<div id="popupWrap">
+	<div class="popupHeader themeColor">
+		<h1>상호대차 신청</h1>
+	</div>
+	<div class="popupContainer">
+		<div class="popupContent">
+			<!--Real Popup Contents Start-->
+			<form id="registForm" name="registForm" method="post">
+				<input type="hidden" id="manageCode" name="manageCode" value="MG"/>
+				<input type="hidden" id="regNo" name="regNo" value="FIC000000101"/>
+				<input type="hidden" id="giveLibCode" name="giveLibCode" value="141142"/>
+				
+						
+							<input type="hidden" name="appendixApplyYn" value="N" />
+						
+					
+				<h4 class="htitle">신청도서 정보</h4>
+				<div class="boardWrap">
+					<table class="board-view">
+						<caption>상호대차 신청 도서 정보</caption>
+						<col style="width:110px;" />
+						<col />
+						<tbody>
+							<tr>
+								<th scope="row">서명</th>
+								<td>삼국지 1</td>
+							</tr>
+							<tr>
+								<th scope="row">저자</th>
+								<td>나관중 지음</td>
+							</tr>
+							<tr>
+								<th scope="row">발행자</th>
+								<td>가상출판사</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<h4 class="htitle">도서관 정보</h4>
+				<div class="boardWrap">
+					<table class="board-view">
+						<caption>상호대차 도서관 정보</caption>
+						<col style="width:110px;" />
+						<col />
+						<tbody>
+							<tr>
+								<th scope="row">제공도서관</th>
+								<td>구미도서관</td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="aplLibCode">수령도서관</label></th>
+								<td>
+									<select name="aplLibCode" id="aplLibCode" class="form-ele auto">
+										<option value="">선택</option>
+										
+											
+												
+														<option value="141069">중앙도서관</option>
+													
+											
+										
+											
+												
+														<option value="141665">고등도서관</option>
+													
+											
+										
+											
+												
+														<option value="741042">논골도서관</option>
+													
+											
+										
+											
+												
+														<option value="141518">무지개도서관</option>
+													
+											
+										
+											
+												
+														<option value="141623">복정도서관</option>
+													
+											
+										
+											
+												
+														<option value="141052">분당도서관</option>
+													
+											
+										
+											
+												
+														<option value="141601">서현도서관</option>
+													
+											
+										
+											
+												
+														<option value="141672">수내도서관</option>
+													
+											
+										
+											
+												
+														<option value="141060">수정도서관</option>
+													
+											
+										
+											
+												
+														<option value="141484">운중도서관</option>
+													
+											
+										
+											
+												
+														<option value="141628">위례도서관</option>
+													
+											
+										
+											
+												
+														<option value="141053">중원도서관</option>
+													
+											
+										
+											
+												
+														<option value="141258">중원어린이도서관</option>
+													
+											
+										
+											
+												
+														<option value="141649">책테마파크도서관</option>
+													
+											
+										
+											
+												
+														<option value="141231">판교도서관</option>
+													
+											
+										
+											
+												
+														<option value="141548">판교어린이도서관</option>
+													
+											
+										
+											
+												
+														<option value="141588">해오름도서관</option>
+													
+											
+										
+											
+												
+														<option value="741048">구미1동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141163">금광2동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141281">도촌동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141162">상대원3동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141255">서현청소년작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141165">수내1동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141511">수진2동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141161">야탑1동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="741086">은행2동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="741051">정자역작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141229">정자청소년작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="741096">중앙동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141226">중원청소년작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141164">태평1동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141167">태평3동작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141256">한솔작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="500005">태평4동 작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="341178">한마음점자도서관</option>
+													
+											
+										
+											
+												
+														<option value="141305">책이랑작은도서관</option>
+													
+											
+										
+											
+												
+														<option value="141441">판교이지더원작은도서관</option>
+													
+											
+										
+									</select>
+								</td>
+							</tr>
+							
+								
+							
+						</tbody>
+					</table>
+				</div>
+				<h4 class="htitle">신청자 정보</h4>
+				<div class="boardWrap">
+					<table class="board-view">
+						<caption>상호대차 신청자 정보</caption>
+						<col style="width:110px;" />
+						<col />
+						<tbody>
+							<tr>
+								<th scope="row"><label for="userKey">신청자</label></th>
+								<td>
+									<select name="userKey" id="userKey" class="form-ele auto">
+										<option value="9999999999">테스트사용자(testuser)</option>
+										
+									</select>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<h4 class="htitle mt10">이용안내</h4>
+				<ul class="dot-list">
+					<li>신청권수:1인 6권(보내는 도서관 대출권수에 포함)<br>*동일도서 중복신청 안됨</li>
+					<li>소요기간: 3~4일 이내(공휴일 및 주말제외)</li>
+					<li>도서대출: 도서 도착 SMS 3일 내 대출<br>
+						*신청 후 미대출 시 7일간 상호대차 신청 불가
+					</li>
+				</ul>
+				
+				<h4 class="htitle mt05">신청거절 사유는 다음과 같습니다.</h4>
+				<ul class="dot-list">
+					<li>해당 자료가 대출중이거나 예약 중인 경우</li>
+					<li>수령도서관에 해당 자료가 존재하는 경우</li>
+					<li>최대 신청건수를 초과한 경우</li>
+					<li>방문이용자가 대출한 경우</li>
+				</ul>
+			</form>
+		</div>
+	</div>
+	<div class="popupFooter">
+		<div class="btnGroup">
+			<a href="#btn" id="applyBtn" class="btn commit">확인</a>
+			<a href="#btn" id="cancelBtn" class="btn cncl">취소</a>
+		</div>
+	</div>
+</div>
+</body>
+</html>
+
