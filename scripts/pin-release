@@ -8,17 +8,6 @@
   (println "Usage:")
   (println "  pin-release <tag> [sha]")
   (println)
-  (println "Create the release tag first:")
-  (println "  git tag <tag>")
-  (println "  git push origin <tag>")
-  (println)
-  (println "Examples:")
-  (println "  git tag 20260330")
-  (println "  git push origin 20260330")
-  (println "  pin-release 20260330")
-  (println "  pin-release 20260304")
-  (println "  pin-release v0.2.0 7383431969192e7c875904a7960726add6cf3c0b")
-  (println)
   (println "Updates skills/snlib-cli/scripts/snlib-cli so its default")
   (println "SNLIB_GIT_TAG and SNLIB_GIT_SHA point at the selected release commit."))
 
@@ -47,8 +36,8 @@
       (System/exit 2))
 
     :else
-    (let [sha (or sha (sh! "git" "rev-parse" (str tag "^{commit}")))
-          _ (sh! "git" "rev-parse" "--verify" (str tag "^{commit}"))
+    (let [target (or sha "HEAD")
+          sha (sh! "git" "rev-parse" "--verify" (str target "^{commit}"))
           repo-root (.getParentFile (.getParentFile (io/file *file*)))
           launcher (io/file repo-root "skills" "snlib-cli" "scripts" "snlib-cli")
           updated (-> (slurp launcher)
@@ -57,6 +46,7 @@
                       (str/replace #"(?m)^SNLIB_GIT_SHA=.*$"
                                    (quoted (format "SNLIB_GIT_SHA=\"${SNLIB_GIT_SHA:-%s}\"" sha))))]
       (spit launcher updated)
+      (println (str "Created and pushed tag " tag))
       (println (str "Updated " (.getPath launcher)))
       (println (str "  SNLIB_GIT_TAG=" tag))
       (println (str "  SNLIB_GIT_SHA=" sha)))))
