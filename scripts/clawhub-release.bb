@@ -136,14 +136,11 @@
     (println (str "Building snlib-cli jar for version " version))
     (run-command! ["clj" "-T:build" "jar" ":version" (pr-str version)])
     (let [jar-path (built-jar-path version)
-          staged-jar (fs/path runtime-script-dir "snlib-cli.jar")
-          stale-deps (fs/path runtime-script-dir "deps.edn")]
+          staged-jar (fs/path runtime-script-dir "snlib-cli.jar")]
       (when-not (fs/exists? jar-path)
         (fail (str "Expected built jar at " jar-path)))
       (fs/create-dirs runtime-script-dir)
       (fs/copy jar-path staged-jar {:replace-existing true})
-      (when (fs/exists? stale-deps)
-        (fs/delete stale-deps))
       (println (str "Staged runtime artifacts in " runtime-script-dir)))))
 
 (defn write-generated-references!
