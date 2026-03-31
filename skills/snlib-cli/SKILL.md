@@ -12,12 +12,12 @@ Use this skill to run Seongnam Library Request from the CLI.
 
 ```bash
 # first-time login
-SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" {baseDir}/scripts/snlib-cli login
+SNLIB_USER="your-id" SNLIB_PASSWORD="your-password" {baseDir}/scripts/snlib-cli.sh login
 
 # read-only checks
-{baseDir}/scripts/snlib-cli my-info
-{baseDir}/scripts/snlib-cli loan-status
-{baseDir}/scripts/snlib-cli search-books --keyword "제2차 세계대전 발췌본"
+{baseDir}/scripts/snlib-cli.sh my-info
+{baseDir}/scripts/snlib-cli.sh loan-status
+{baseDir}/scripts/snlib-cli.sh search-books --keyword "제2차 세계대전 발췌본"
 ```
 
 ## Common Workflows
