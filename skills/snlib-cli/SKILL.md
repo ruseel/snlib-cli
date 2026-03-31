@@ -8,6 +8,7 @@ metadata: { "openclaw": { "requires": { "bins": ["bash", "java", "clojure"], "en
 
 Use {baseDir}/scripts/snlib-cli.sh to initiate Seongnam Library Request from the CLI.
 
+For more information, visits https://github.com/ruseel/snlib-cli
 
 ## Quick Start
 
@@ -39,3 +40,6 @@ Read `{baseDir}/references/commands.md` for command patterns and end-to-end flow
 
 ## Troubleshooting
 If 3 hours passed, authentication can fail. then you can re-login.
+
+## Technical Details 
+In first execution, `clojure` will downloads deps from maven central and accompanied snlib-cli.jar will be used.
