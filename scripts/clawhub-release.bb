@@ -109,9 +109,9 @@
 
 (defn run!
   [cmd]
-  (let [result (p/shell {:out :inherit
-                         :err :inherit}
-                        cmd)]
+  (let [result (apply p/shell {:out :inherit
+                               :err :inherit}
+                       cmd)]
     (when-not (zero? (:exit result))
       (System/exit (:exit result)))))
 
@@ -128,7 +128,7 @@
         tag-values (->> (str/split tags #",")
                         (map str/trim)
                         (remove str/blank?))
-        cmd (cond-> ["clawhub" "skill" "publish" (str target-root)
+        cmd (cond-> ["clawhub" "publish" (str target-root)
                      "--slug" slug
                      "--name" name
                      "--version" version]
