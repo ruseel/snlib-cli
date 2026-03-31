@@ -7,12 +7,12 @@
 To check shell file(skills/snlib-cli/scripts/snlib-cli.sh) would run in user's environment
   maven local repo location should be override, not to use dev machine's local repo.
 
-adding :mavn/local-repo works
+adding :mvn/local-repo works
 ```
 clojure -Srepro \
     -Sdeps '{:mvn/local-repo "/tmp/snlib-test-m2"
              :deps {io.github.ruseel/snlib-cli
-                    {:local/root ".../.../snlib-cli.jar"}}}' \
+                    {:mvn/version "20260330"}}}' \
     -M -m snlib.cli --help
 ```
 

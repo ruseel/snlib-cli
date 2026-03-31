@@ -42,4 +42,4 @@ Read `{baseDir}/references/commands.md` for command patterns and end-to-end flow
 If 3 hours passed, authentication can fail. then you can re-login.
 
 ## Technical Details 
-In first execution, `clojure` will downloads deps from maven central and accompanied snlib-cli.jar will be used.
+On first execution, `clojure` downloads deps from Maven Central, including `io.github.ruseel/snlib-cli`.

@@ -3,7 +3,6 @@
 (require
   '[babashka.fs :as fs]
   '[babashka.process :as p]
-  '[clojure.edn :as edn]
   '[clojure.string :as str])
 
 (def repo-root
@@ -14,12 +13,6 @@
 
 (def references-dir
   (fs/path skill-source "references"))
-
-(def build-config-file
-  (fs/path repo-root "build-config.edn"))
-
-(def runtime-script-dir
-  (fs/path repo-root "skills" "snlib-cli" "scripts"))
 
 (def publish-defaults
   {:slug "snlib-cli"
@@ -34,8 +27,7 @@
   (println)
   (println "Commands:")
   (println "  prepare   Generate skills/snlib-cli/references/*.md from src/snlib/*.edn.")
-  (println "            When --version is provided, also stage snlib-cli.jar in skills/snlib-cli/scripts/.")
-  (println "  publish   Run prepare, then execute clawhub skill publish against skills/snlib-cli.")
+  (println "  publish   Run prepare, then execute clawhub publish against skills/snlib-cli.")
   (println)
   (println "Options:")
   (println "  --version VERSION  Required for publish")
@@ -101,48 +93,6 @@
          (when-not (str/ends-with? body "\n") "\n")
          "```\n")))
 
-(defn artifact-coords
-  []
-  (let [lib (-> build-config-file
-                str
-                slurp
-                edn/read-string
-                :lib
-                str)
-        [group-id artifact-id] (str/split lib #"/" 2)]
-    (when (or (str/blank? group-id)
-              (str/blank? artifact-id))
-      (fail (str "build-config.edn :lib must be group/artifact, got: " lib)))
-    {:group-id group-id
-     :artifact-id artifact-id}))
-
-(defn built-jar-path
-  [version]
-  (let [{:keys [group-id artifact-id]} (artifact-coords)
-        group-path (str/replace group-id "." "/")]
-    (fs/path repo-root
-             "target"
-             "maven"
-             group-path
-             artifact-id
-             version
-             (str artifact-id "-" version ".jar"))))
-
-(declare run-command!)
-
-(defn stage-runtime-artifacts!
-  [version]
-  (when-not (str/blank? (or version ""))
-    (println (str "Building snlib-cli jar for version " version))
-    (run-command! ["clj" "-T:build" "jar" ":version" (pr-str version)])
-    (let [jar-path (built-jar-path version)
-          staged-jar (fs/path runtime-script-dir "snlib-cli.jar")]
-      (when-not (fs/exists? jar-path)
-        (fail (str "Expected built jar at " jar-path)))
-      (fs/create-dirs runtime-script-dir)
-      (fs/copy jar-path staged-jar {:replace-existing true})
-      (println (str "Staged runtime artifacts in " runtime-script-dir)))))
-
 (defn write-generated-references!
   []
   (fs/create-dirs references-dir)
@@ -152,9 +102,8 @@
         (generated-reference "src/snlib/manage-code.edn")))
 
 (defn prepare!
-  [opts]
+  [_opts]
   (write-generated-references!)
-  (stage-runtime-artifacts! (:version opts))
   (println (str "Prepared ClawHub references in " references-dir))
   skill-source)
 
