@@ -1,0 +1,15 @@
+;; Update the TODO license entries before your first Maven Central release.
+;; `:server-id` should match the `<server><id>...` entry in ~/.m2/settings.xml
+;; that stores your Sonatype Central Portal user token + password token.
+{:lib io.github.ruseel/snlib-cli
+ :description "Clojure CLI and library for Seongnam Library (snlib.go.kr) tasks."
+ :url "https://github.com/ruseel/snlib-cli"
+ :scm {:connection "scm:git:git://github.com/ruseel/snlib-cli.git"
+       :developerConnection "scm:git:ssh://git@github.com/ruseel/snlib-cli.git"
+       :url "https://github.com/ruseel/snlib-cli"}
+ :licenses [{:name "TODO: choose a license"
+             :url "TODO: add the license URL"
+             :distribution "repo"}]
+ :developers [{:id "ruseel"
+               :name "ruseel"}]
+ :server-id "central"}

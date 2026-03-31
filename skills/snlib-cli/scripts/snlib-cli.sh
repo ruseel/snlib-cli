@@ -4,9 +4,12 @@ set -euo pipefail
 # NOTE: This default repo URL still points at a maintainer-specific SSH remote.
 # Replace it with a public clone URL before publishing to ClawHub.
 SNLIB_GITHUB_REPO="${SNLIB_GITHUB_REPO:-https://github.com/ruseel/snlib-cli.git}"
-# This launcher intentionally fetches source via tools.deps instead of bundling
-# compiled artifacts into the skill. That keeps the published skill small and
-# reviewable, but the maintainer must repin these values for each release.
+# Preferred once the project is published to Maven Central / Central Portal.
+# Example: SNLIB_MVN_VERSION=0.1.0 skills/snlib-cli/scripts/snlib-cli.sh --help
+SNLIB_MVN_COORD="${SNLIB_MVN_COORD:-io.github.ruseel/snlib-cli}"
+SNLIB_MVN_VERSION="${SNLIB_MVN_VERSION:-}"
+# Fallback git pinning for releases before Maven Central publication, or for
+# testing an unpublished tag/commit.
 SNLIB_GIT_TAG="${SNLIB_GIT_TAG:-20260330}"
 SNLIB_GIT_SHA="${SNLIB_GIT_SHA:-9e88c1d8e9f5e806ef3319e3c1b393e26cfa7b48}"
 # Optional complete -Sdeps override for dev/testing.
@@ -15,6 +18,12 @@ SNLIB_DEPS_EDN="${SNLIB_DEPS_EDN:-}"
 
 if [[ -n "${SNLIB_DEPS_EDN}" ]]; then
   exec clojure -Sdeps "${SNLIB_DEPS_EDN}" -M -m snlib.cli "$@"
+fi
+
+if [[ -n "${SNLIB_MVN_VERSION}" ]]; then
+  exec clojure \
+    -Sdeps "{:deps {${SNLIB_MVN_COORD} {:mvn/version \"${SNLIB_MVN_VERSION}\"}}}" \
+    -M -m snlib.cli "$@"
 fi
 
 : "${SNLIB_GIT_TAG:?SNLIB_GIT_TAG must be set for tools.deps git deps.}"

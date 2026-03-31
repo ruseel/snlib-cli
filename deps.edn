@@ -4,7 +4,9 @@
         org.jsoup/jsoup {:mvn/version "1.17.2"}
         org.clojure/tools.cli {:mvn/version "1.1.230"}}
  :aliases
- {:test {:extra-paths ["test"]
+ {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
+          :ns-default build}
+  :test {:extra-paths ["test"]
          :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
          :main-opts ["-m" "kaocha.runner"]}
   :coverage {:extra-paths ["test"]
