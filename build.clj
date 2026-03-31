@@ -214,9 +214,18 @@
   (.mkdirs (io/file path))
   path)
 
+(defn- shell-args
+  [args]
+  (let [options (when (map? (last args))
+                  (last args))
+        argv (if options
+               (butlast args)
+               args)]
+    (concat argv (mapcat identity options))))
+
 (defn- run-command!
   [& args]
-  (let [result (apply shell/sh args)]
+  (let [result (apply shell/sh (shell-args args))]
     (when-not (zero? (:exit result))
       (throw (ex-info (str "Command failed: "
                            (str/join " " (map str (remove map? args)))
@@ -470,8 +479,8 @@
                header (into ["-H" header])
                form-file (into ["--form" (str "bundle=@" form-file ";type=application/octet-stream")])
                :always (conj url))
-        result (apply shell/sh (cond-> args
-                                 dir (conj {:dir dir})))
+        result (apply shell/sh (shell-args (cond-> args
+                                             dir (conj {:dir dir}))))
         out (or (:out result) "")
         lines (str/split-lines out)
         status-line (last lines)
