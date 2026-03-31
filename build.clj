@@ -27,8 +27,8 @@
   (println "  clj -T:build clean")
   (println "  clj -T:build jar :version '\"0.1.0\"'")
   (println "  clj -T:build install :version '\"0.1.0-SNAPSHOT\"'")
-  (println "  clj -T:build sign :version '\"0.1.0\"' [:gpg-key '\"KEYID\"']")
-  (println "  clj -T:build bundle :version '\"0.1.0\"' [:gpg-key '\"KEYID\"']")
+  (println "  clj -T:build sign :version '\"0.1.0\"' [:gpg-key '\"KEYID\"'] [:gpg-passphrase '\"...\"']")
+  (println "  clj -T:build bundle :version '\"0.1.0\"' [:gpg-key '\"KEYID\"'] [:gpg-passphrase '\"...\"']")
   (println "  clj -T:build deploy :version '\"0.1.0\"' [:server-id '\"central\"'] [:publishing-type '\"USER_MANAGED\"']")
   (println "  clj -T:build status :deployment-id '\"<deployment-id>\"' [:server-id '\"central\"']")
   (println "  clj -T:build publish :deployment-id '\"<deployment-id>\"' [:server-id '\"central\"']")
@@ -356,9 +356,11 @@
     (spit (str file ext) (str checksum "\n"))))
 
 (defn- sign-file!
-  [file gpg-key]
+  [file gpg-key gpg-passphrase]
   (let [args (cond-> ["gpg" "--batch" "--yes" "--armor" "--detach-sign"]
                (not-blank gpg-key) (into ["--local-user" gpg-key])
+               (some? gpg-passphrase) (into ["--pinentry-mode" "loopback"
+                                             "--passphrase" gpg-passphrase])
                :always (conj (str file)))]
     (apply run-command! args)
     (write-checksum! "MD5" file ".md5")
@@ -371,13 +373,15 @@
         version (resolve-version opts)
         layout (jar opts)
         gpg-key (or (not-blank (:gpg-key opts))
-                    (not-blank (System/getenv "SNLIB_GPG_KEY")))]
+                    (not-blank (System/getenv "SNLIB_GPG_KEY")))
+        gpg-passphrase (or (:gpg-passphrase opts)
+                           (System/getenv "SNLIB_GPG_PASSPHRASE"))]
     (validate-central-metadata! config)
     (doseq [file [(:jar-file layout)
                   (:pom-file layout)
                   (:sources-jar-file layout)
                   (:javadoc-jar-file layout)]]
-      (sign-file! file gpg-key)
+      (sign-file! file gpg-key gpg-passphrase)
       (println (str "Signed " file)))
     layout))
 
