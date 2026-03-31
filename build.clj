@@ -435,8 +435,11 @@
     (when-not (.exists settings-file)
       (fail (str "Missing ~/.m2/settings.xml for server id " server-id)))
     (let [settings (-> settings-file xml/parse keywordize-xml-tags)
-          servers (filter #(= :server (:tag %))
-                          (tree-seq #(and (map? %) (seq (:content %))) :content settings))
+          servers (let [nested (filter #(= :server (:tag %))
+                                       (tree-seq #(and (map? %) (seq (:content %))) :content settings))]
+                    (if (= :server (:tag settings))
+                      (vec (cons settings nested))
+                      (vec nested)))
           server (some #(when (= server-id (child-text % :id)) %) servers)
           username (some-> server (child-text :username) not-blank)
           password (some-> server (child-text :password) not-blank)]
