@@ -6,7 +6,7 @@ metadata: { "openclaw": { "requires": { "bins": ["bash", "java", "clojure"], "en
 
 # snlib-cli
 
-Use this skill to run Seongnam Library Request from the CLI.
+Use this skill to initiate Seongnam Library Request from the CLI.
 
 ## Quick Start
 
