@@ -18,9 +18,6 @@
 (def build-config-file
   (fs/path repo-root "build-config.edn"))
 
-(def deps-file
-  (fs/path repo-root "deps.edn"))
-
 (def runtime-script-dir
   (fs/path repo-root "skills" "snlib-cli" "scripts"))
 
@@ -37,7 +34,7 @@
   (println)
   (println "Commands:")
   (println "  prepare   Generate skills/snlib-cli/references/*.md from src/snlib/*.edn.")
-  (println "            When --version is provided, also stage snlib-cli.jar and deps.edn in skills/snlib-cli/scripts/.")
+  (println "            When --version is provided, also stage snlib-cli.jar in skills/snlib-cli/scripts/.")
   (println "  publish   Run prepare, then execute clawhub skill publish against skills/snlib-cli.")
   (println)
   (println "Options:")
@@ -140,12 +137,13 @@
     (run-command! ["clj" "-T:build" "jar" ":version" (pr-str version)])
     (let [jar-path (built-jar-path version)
           staged-jar (fs/path runtime-script-dir "snlib-cli.jar")
-          staged-deps (fs/path runtime-script-dir "deps.edn")]
+          stale-deps (fs/path runtime-script-dir "deps.edn")]
       (when-not (fs/exists? jar-path)
         (fail (str "Expected built jar at " jar-path)))
       (fs/create-dirs runtime-script-dir)
       (fs/copy jar-path staged-jar {:replace-existing true})
-      (fs/copy deps-file staged-deps {:replace-existing true})
+      (when (fs/exists? stale-deps)
+        (fs/delete stale-deps))
       (println (str "Staged runtime artifacts in " runtime-script-dir)))))
 
 (defn write-generated-references!
