@@ -22,7 +22,7 @@
   (fs/path repo-root "deps.edn"))
 
 (def runtime-script-dir
-  (fs/path repo-root "skills" "snlib-lib" "scripts"))
+  (fs/path repo-root "skills" "snlib-cli" "scripts"))
 
 (def publish-defaults
   {:slug "snlib-cli"
@@ -37,7 +37,7 @@
   (println)
   (println "Commands:")
   (println "  prepare   Generate skills/snlib-cli/references/*.md from src/snlib/*.edn.")
-  (println "            When --version is provided, also stage snlib-cli.jar and deps.edn in skills/snlib-lib/scripts/.")
+  (println "            When --version is provided, also stage snlib-cli.jar and deps.edn in skills/snlib-cli/scripts/.")
   (println "  publish   Run prepare, then execute clawhub skill publish against skills/snlib-cli.")
   (println)
   (println "Options:")
