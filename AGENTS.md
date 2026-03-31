@@ -1,15 +1,19 @@
-## Formatting & Testing
 
-Hooks auto-run on `git commit` via `prek`. Do not run manually.
 
-Debug commands (only if hooks fail):
-- `standard-clj check` / `standard-clj fix`
-- `clj -M:test --fail-fast`
+# Gotchas
+- Hooks auto-run on `git commit` via `prek`.
 
-## Agent Workflow
+## When checking snlib-cli.sh would running
+To check shell file(skills/snlib-cli/scripts/snlib-cli.sh) would run in user's environment
+  maven local repo location should be override, not to use dev machine's local repo.
 
-1. Make code changes.
-2. Run `git commit`.
-3. If hooks fail, read output and fix code.
-4. If formatter changed files, run `git add -u` then retry commit.
-5. Repeat until commit succeeds.
+adding :mavn/local-repo works
+```
+clojure -Srepro \
+    -Sdeps '{:mvn/local-repo "/tmp/snlib-test-m2"
+             :deps {io.github.ruseel/snlib-cli
+                    {:local/root ".../.../snlib-cli.jar"}}}' \
+    -M -m snlib.cli --help
+```
+
+adding JAVA_TOOL_OPTIONS=-Dmaven.repo.local=... is not working.

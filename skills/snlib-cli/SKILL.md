@@ -4,9 +4,10 @@ description: Run Seongnam Library (snlib.go.kr) tasks from the command line. Use
 metadata: { "openclaw": { "requires": { "bins": ["bash", "java", "clojure"], "env": ["SNLIB_USER", "SNLIB_PASSWORD"] } } }
 ---
 
-# snlib-cli
+# snlib-cli.sh
 
-Use this skill to initiate Seongnam Library Request from the CLI.
+Use {baseDir}/scripts/snlib-cli.sh to initiate Seongnam Library Request from the CLI.
+
 
 ## Quick Start
 
