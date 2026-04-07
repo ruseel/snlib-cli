@@ -277,6 +277,41 @@
           (is (= 2 (count (get-in result [:data :loans]))))
           (is (= false (get-in result [:data :loans 1 :renewable?]))))))))
 
+(deftest loan-status는-article-list-레이아웃도-파싱한다
+  (let [client (core/create-client)
+        html (str
+               "<div class='boardFilter'><p class='count'>대출현황건수 : <span class='themeFC'>2</span>건</p></div>"
+               "<div class='articleWrap'><ul class='article-list'>"
+               "<li><div class='article empty'></div></li>"
+               "<li>"
+               "<p class='title'><a href='#'>폭격기의 달이 뜨면</a></p>"
+               "<p class='info'><span>소장도서관 : 운중도서관</span><span>자료실 : [운중]문헌정보실</span></p>"
+               "<p class='info'><span>대출일 : 2026.04.04</span><span class='status finish'>반납예정일 : <em>2026.04.18</em></span></p>"
+               "<p class='info'><span class='status'>상태 : <em>대출중</em></span></p>"
+               "</li>"
+               "<li>"
+               "<p class='title'><a href='#'>우리, 프로그래머들</a></p>"
+               "<p class='info'><span>소장도서관 : 운중도서관</span><span>자료실 : [운중]문헌정보실</span></p>"
+               "<p class='info'><span>대출일 : 2026.03.28</span><span class='status finish'>반납예정일 : <em>2026.04.11</em></span></p>"
+               "<p class='info'><span class='status'>상태 : <em>대출중 (제3자 예약중이므로 연기불가)</em></span></p>"
+               "</li>"
+               "</ul></div>")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [_calls]
+        (let [result (core/loan-status! client {:include-history? false})]
+          (is (= 2 (get-in result [:data :count])))
+          (is (= ["폭격기의 달이 뜨면" "우리, 프로그래머들"]
+                 (mapv :title (get-in result [:data :loans]))))
+          (is (= ["2026.04.04" "2026.03.28"]
+                 (mapv :loan-date (get-in result [:data :loans]))))
+          (is (= ["2026.04.18" "2026.04.11"]
+                 (mapv :due-date (get-in result [:data :loans]))))
+          (is (= ["대출중" "대출중 (제3자 예약중이므로 연기불가)"]
+                 (mapv :return-status (get-in result [:data :loans]))))
+          (is (= [nil false]
+                 (mapv :renewable? (get-in result [:data :loans])))))))))
+
 (deftest loan-status는-로그아웃된-페이지를-감지한다
   (let [client (core/create-client)]
     (with-request-stub

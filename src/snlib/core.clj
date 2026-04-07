@@ -447,14 +447,46 @@
            (remove nil?)
            vec))))
 
+(defn- span-value-from-texts
+  [texts pattern]
+  (some (fn [s]
+          (when-let [[_ v] (re-find pattern s)]
+            (str/trim v)))
+        texts))
+
+(defn- parse-loans-from-article-list
+  [doc]
+  (->> (.select doc ".article-list > li")
+       (remove #(some-> (.select ^Element % ".emptyNote") first))
+       (map (fn [^Element li]
+              (let [title (or (some-> (.select li "p.title a") first .text normalize-text)
+                              (some-> (.select li "p.title") first .text normalize-text))
+                    spans (->> (.select li "p.info span")
+                               (map #(.text ^Element %))
+                               (map normalize-text)
+                               (remove nil?)
+                               vec)
+                    return-status (or (span-value-from-texts spans #"상태\s*:\s*(.+)") "")]
+                (when (or title (seq spans))
+                  {:title (or title "")
+                   :loan-date (or (span-value-from-texts spans #"대출일\s*:\s*(.+)") "")
+                   :due-date (or (span-value-from-texts spans #"반납예정일\s*:\s*(.+)") "")
+                   :return-status return-status
+                   :renewable? (parse-renewable? return-status)}))))
+       (remove nil?)
+       vec))
+
 (defn- parse-loan-status-loans
   [html]
   (if (str/blank? html)
     []
-    (let [doc (Jsoup/parse html)]
-      (->> (.select doc "table")
-           (mapcat parse-loans-from-table)
-           vec))))
+    (let [doc (Jsoup/parse html)
+          table-loans (->> (.select doc "table")
+                           (mapcat parse-loans-from-table)
+                           vec)]
+      (if (seq table-loans)
+        table-loans
+        (parse-loans-from-article-list doc)))))
 
 (defn- returned-loan?
   [loan]
