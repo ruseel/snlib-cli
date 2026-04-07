@@ -12,7 +12,7 @@ adding :mvn/local-repo works
 clojure -Srepro \
     -Sdeps '{:mvn/local-repo "/tmp/snlib-test-m2"
              :deps {io.github.ruseel/snlib-cli
-                    {:mvn/version "20260330"}}}' \
+                    {:mvn/version "20260407"}}}' \
     -M -m snlib.cli --help
 ```
 
