@@ -85,6 +85,44 @@
                    :reg-no "FIC000000202"}]
                  (get-in result [:data :items]))))))))
 
+(deftest loan-status는-article-list-전체-HTML-픽스처를-파싱한다
+  (let [client (core/create-client)
+        html (fixture-html "loan-status/page-article-list.html")]
+    (with-request-stub
+      [{:status 200 :headers {"content-type" "text/html"} :body html}]
+      (fn [_calls]
+        (let [result (core/loan-status! client {:include-history? false})]
+          (is (:ok? result))
+          (is (= 6 (get-in result [:data :count])))
+          (is (= ["테스트 도서 1"
+                  "테스트 도서 2"
+                  "테스트 도서 3"
+                  "테스트 도서 4"
+                  "테스트 도서 5"
+                  "테스트 도서 6"]
+                 (mapv :title (get-in result [:data :loans]))))
+          (is (= ["2026.04.01"
+                  "2026.03.25"
+                  "2026.03.25"
+                  "2026.03.25"
+                  "2026.03.25"
+                  "2026.03.25"]
+                 (mapv :loan-date (get-in result [:data :loans]))))
+          (is (= ["2026.04.15"
+                  "2026.04.08"
+                  "2026.04.08"
+                  "2026.04.08"
+                  "2026.04.08"
+                  "2026.04.08"]
+                 (mapv :due-date (get-in result [:data :loans]))))
+          (is (= ["대출중"
+                  "대출중"
+                  "대출중 (제3자 예약중이므로 연기불가)"
+                  "대출중"
+                  "대출중"
+                  "대출중"]
+                 (mapv :return-status (get-in result [:data :loans])))))))))
+
 (deftest hope-book-request는-전체-페이지-픽스처의-기본값을-준비-페이로드에-반영한다
   (let [client (core/create-client)
         page-html (fixture-html "hope-book-request/page.html")
