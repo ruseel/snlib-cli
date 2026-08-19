@@ -4,7 +4,8 @@
 -- Scope: Seongnam Library patron workflows currently exposed by the Clojure
 -- implementation. Includes authentication, catalogue discovery, account
 -- records, and the prepare-then-submit book-request workflows. Excludes HTTP,
--- HTML parsing, credential storage, and the remote service's internal rules.
+-- HTML parsing, credential storage, operational write-enable controls, and the
+-- remote service's internal rules.
 
 config {
     session_duration: Duration = 3.hours
@@ -17,9 +18,10 @@ config {
 entity PatronSession {
     patron: LibraryPatron
     authenticated_at: Timestamp
+    remembered: Boolean
     status: active | expired | rejected
 
-    is_recent: status = active and authenticated_at + config.session_duration > now
+    is_usable: remembered and status = active and authenticated_at + config.session_duration > now
 }
 
 external entity LibraryPatron {
@@ -74,7 +76,7 @@ entity PreparedInterlibraryLoanRequest {
     patron: LibraryPatron
     book: CatalogueBook
     receiving_library: String
-    status: ready | submitted | blocked | rejected
+    status: ready | submitted | submit_failed
 }
 
 ------------------------------------------------------------
@@ -89,6 +91,7 @@ rule AuthenticatePatron {
     ensures: PatronSession.created(
         patron: patron,
         authenticated_at: now,
+        remembered: true,
         status: active
     )
 }
@@ -101,6 +104,7 @@ rule RejectAuthentication {
     ensures: PatronSession.created(
         patron: patron,
         authenticated_at: now,
+        remembered: false,
         status: rejected
     )
 }
@@ -116,7 +120,7 @@ rule SearchCatalogue {
 rule ViewAccountRecords {
     when: PatronViewsAccountRecords(session, record_kind)
 
-    requires: session.is_recent
+    requires: session.is_usable
 
     ensures: AccountRecordsReturned(session.patron, record_kind)
 }
@@ -124,7 +128,7 @@ rule ViewAccountRecords {
 rule PrepareHopeBookRequest {
     when: PatronPreparesHopeBookRequest(session, request)
 
-    requires: session.is_recent
+    requires: session.is_usable
 
     ensures: PreparedHopeBookRequest.created(
         patron: session.patron,
@@ -138,25 +142,25 @@ rule PrepareHopeBookRequest {
 rule SubmitHopeBookRequest {
     when: PatronSubmitsHopeBookRequest(session, request)
 
-    requires: session.is_recent
-    requires: LibraryServiceConfirmsHopeBookRequest(request)
+    requires: session.is_usable
+    requires: LibraryServiceSemanticallyConfirmsHopeBookRequest(request)
 
     ensures: request.status = submitted
 }
 
 rule RejectHopeBookRequest {
-  when: PatronSubmitsHopeBookRequest(session, request)
+    when: PatronSubmitsHopeBookRequest(session, request)
 
-  requires: session.is_recent
-  requires: not LibraryServiceConfirmsHopeBookRequest(request)
+    requires: session.is_usable
+    requires: not LibraryServiceSemanticallyConfirmsHopeBookRequest(request)
 
-  ensures: request.status = submit_failed
+    ensures: request.status = submit_failed
 }
 
 rule PrepareInterlibraryLoanRequest {
     when: PatronPreparesInterlibraryLoanRequest(session, book, receiving_library)
 
-    requires: session.is_recent
+    requires: session.is_usable
     requires: book.managing_library != null
     requires: book.registration_number != null
 
@@ -171,11 +175,21 @@ rule PrepareInterlibraryLoanRequest {
 rule SubmitInterlibraryLoanRequest {
     when: PatronSubmitsInterlibraryLoanRequest(session, request)
 
-    requires: session.is_recent
+    requires: session.is_usable
     requires: request.status = ready
-    requires: LibraryServiceConfirmsInterlibraryLoan(request)
+    requires: LibraryServiceSemanticallyConfirmsInterlibraryLoan(request)
 
     ensures: request.status = submitted
+}
+
+rule RejectInterlibraryLoanRequest {
+    when: PatronSubmitsInterlibraryLoanRequest(session, request)
+
+    requires: session.is_usable
+    requires: request.status = ready
+    requires: not LibraryServiceSemanticallyConfirmsInterlibraryLoan(request)
+
+    ensures: request.status = submit_failed
 }
 
 ------------------------------------------------------------

@@ -2,6 +2,6 @@ import {
   "ruseel/snlib-cli/snlib",
 }
 
-options(
-  "is-main": true,
-)
+supported_targets = "native"
+
+pkgtype(kind: "executable")

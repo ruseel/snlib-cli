@@ -1,0 +1,15 @@
+{
+  "flow": "loan_status",
+  "input_intent": {"kind": "view_current_loans", "include_history": false},
+  "ordered_fixture_responses": [
+    {"status": 200, "content_type": "text/html", "fixture": "../loan-status/page-article-list.html"}
+  ],
+  "expected_facts": {
+    "successful": true,
+    "loan_count": 6,
+    "titles": ["테스트 도서 1", "테스트 도서 2", "테스트 도서 3", "테스트 도서 4", "테스트 도서 5", "테스트 도서 6"],
+    "loan_dates": ["2026.04.01", "2026.03.25", "2026.03.25", "2026.03.25", "2026.03.25", "2026.03.25"],
+    "due_dates": ["2026.04.15", "2026.04.08", "2026.04.08", "2026.04.08", "2026.04.08", "2026.04.08"],
+    "return_statuses": ["대출중", "대출중", "대출중 (제3자 예약중이므로 연기불가)", "대출중", "대출중", "대출중"]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "flow": "search/hope",
+  "input_intent": {"kind": "catalogue_search", "keyword": "삼국지 2"},
+  "ordered_fixture_responses": [
+    {"status": 200, "content_type": "text/html", "fixture": "../search-books/hope-book-target.html"}
+  ],
+  "expected_facts": {
+    "successful": true,
+    "total_count": 1,
+    "returned_item_count": 1,
+    "item": {"title": "삼국지 2, 적벽대전", "author": "나관중 지음 ; 테스트번역 옮김", "publisher": "가상출판사", "publication_year": "2024", "manage_code": "MP", "registration_number": "FIC000000202"}
+  }
+}

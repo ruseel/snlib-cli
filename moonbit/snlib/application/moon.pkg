@@ -1,0 +1,9 @@
+import {
+  "ruseel/snlib-cli/snlib/html",
+  "ruseel/snlib-cli/snlib/http_session",
+  "ruseel/snlib-cli/snlib/model",
+  "ruseel/snlib-cli/snlib/remote",
+  "ruseel/snlib-cli/snlib/store",
+}
+
+supported_targets = "native"

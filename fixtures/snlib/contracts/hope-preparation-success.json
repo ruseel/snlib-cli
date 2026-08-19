@@ -1,0 +1,18 @@
+{
+  "flow": "hope_preparation_success",
+  "input_intent": {
+    "kind": "prepare_and_submit_hope_book",
+    "manage_code": "MU",
+    "book": {"title": "삼국지 2", "author": "나관중", "publisher": "가상출판사", "publication_year": "2024", "isbn": "9780000000002", "price": "25600"},
+    "sms_receipt": true
+  },
+  "ordered_fixture_responses": [
+    {"status": 200, "content_type": "text/html", "fixture": "../hope-book-request/page.html"},
+    {"status": 200, "content_type": "text/html", "fixture": "../hope-book-request/submit-samgukji-2.html"}
+  ],
+  "expected_facts": {
+    "prepared_payload": {"email": "masked@example.com", "mobile_no_1": "010", "mobile_no_2": "1234", "mobile_no_3": "5678", "phone": "010-1234-5678", "sms_receipt": "Y", "manage_code": "MU"},
+    "result_message": "신청이 완료 되었습니다."
+  },
+  "expected_submission_verdict": "submitted"
+}

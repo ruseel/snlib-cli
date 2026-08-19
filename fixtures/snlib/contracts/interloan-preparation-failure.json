@@ -1,0 +1,14 @@
+{
+  "flow": "interloan_preparation_failure",
+  "input_intent": {"kind": "prepare_and_submit_interlibrary_loan", "manage_code": "MG", "registration_number": "FIC000000101", "receiving_library_code": "141484"},
+  "ordered_fixture_responses": [
+    {"status": 200, "content_type": "text/html", "fixture": "../interloan-request/popup-samgukji-1.html"},
+    {"status": 200, "content_type": "text/html", "fixture": "../interloan-request/submit-samgukji-1.html"}
+  ],
+  "expected_facts": {
+    "successful": false,
+    "prepared_payload": {"manage_code": "MG", "registration_number": "FIC000000101", "providing_library_code": "141142", "appendix_apply": "N", "receiving_library_code": "141484", "user_key": "9999999999"},
+    "result_message": "비치중인 자료만 상호대차 신청이 가능합니다.[현재 책상태: 관외대출자료]"
+  },
+  "expected_submission_verdict": "submit_failed"
+}

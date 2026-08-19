@@ -1,5 +1,4 @@
 import {
-  "ruseel/snlib-cli/snlib/application",
   "ruseel/snlib-cli/snlib/model",
 }
 

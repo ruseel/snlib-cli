@@ -1,0 +1,18 @@
+{
+  "flow": "search/interloan",
+  "input_intent": {
+    "kind": "catalogue_search",
+    "keyword": "삼국지 1",
+    "page_size": 20
+  },
+  "ordered_fixture_responses": [
+    {"status": 200, "content_type": "text/html", "fixture": "../search-books/interloan-target.html"}
+  ],
+  "expected_facts": {
+    "successful": true,
+    "total_count": 12,
+    "returned_item_count": 10,
+    "first_item": {"title": "삼국지 1", "author": "나관중 지음", "publisher": "가상출판사", "publication_year": "2024", "manage_code": "MG", "registration_number": "FIC000000101"},
+    "last_item": {"title": "삼국지 1", "author": "나관중 지음", "publisher": "가상출판사", "publication_year": "2024", "manage_code": "MB", "registration_number": "FIC000000110"}
+  }
+}

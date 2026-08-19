@@ -1,0 +1,5 @@
+import {
+  "ruseel/snlib-cli/snlib/remote",
+}
+
+supported_targets = "native"

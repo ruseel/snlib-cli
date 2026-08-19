@@ -1,6 +1,5 @@
 ///|
-/// Describes the current implementation status. This package does not yet
-/// provide the behavior of the Clojure snlib-cli implementation.
+/// Describes the Stage 0 implementation status.
 pub fn implementation_status() -> String {
-  "MoonBit snlib-cli functionality is not implemented."
+  "MoonBit snlib-cli foundation is ready; commands are not implemented."
 }
