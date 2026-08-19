@@ -1,0 +1,67 @@
+#!/usr/bin/env nu
+
+^sudo apt-get update
+^sudo apt-get install -y curl openjdk-17-jre-headless rlwrap
+
+if (which allium | is-empty) {
+  let allium_version = '3.5.3'
+  let allium_dir = (mktemp -d | str trim)
+  let archive = $'($allium_dir)/allium.tar.gz'
+  ^curl -fsSL $"https://github.com/juxt/allium-tools/releases/download/v($allium_version)/allium-x86_64-unknown-linux-gnu.tar.gz" -o $archive
+  ^tar -xzf $archive -C $allium_dir
+  ^sudo install -m 0755 $'($allium_dir)/allium' /usr/local/bin/allium
+  rm -r $allium_dir
+}
+
+let clojure_installer = (mktemp | str trim)
+^curl -fsSL https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh -o $clojure_installer
+^chmod +x $clojure_installer
+^sudo $clojure_installer
+rm $clojure_installer
+
+if (which bb | is-empty) {
+  let babashka_installer = (mktemp | str trim)
+  ^curl -fsSL https://raw.githubusercontent.com/babashka/babashka/master/install -o $babashka_installer
+  ^chmod +x $babashka_installer
+  ^sudo $babashka_installer
+  rm $babashka_installer
+}
+
+if (which bbin | is-empty) {
+  ^sudo curl -fsSL https://raw.githubusercontent.com/babashka/bbin/v0.2.5/bbin -o /usr/local/bin/bbin
+  ^sudo chmod 0755 /usr/local/bin/bbin
+}
+
+mkdir ~/.local/bin
+if not ($'($env.HOME)/.local/bin/clj-nrepl-eval' | path exists) {
+  with-env {BABASHKA_BBIN_BIN_DIR: $'($env.HOME)/.local/bin'} {
+    ^bbin install https://github.com/bhauman/clojure-mcp-light.git --tag v0.2.2 --as clj-nrepl-eval --main-opts '["-m" "clojure-mcp-light.nrepl-eval"]'
+  }
+}
+^sudo ln -sf $'($env.HOME)/.local/bin/clj-nrepl-eval' /usr/local/bin/clj-nrepl-eval
+
+let moonbit_skills = [
+  make-moonbit-c-bindings
+  moonbit-agent-guide
+  moonbit-c-binding
+  moonbit-extract-spec-test
+  moonbit-orientation
+  moonbit-proof
+  moonbit-refactoring
+  moonbit-spec-test-development
+  ocaml2moonbit-migration
+]
+for name in $moonbit_skills {
+  let target = ($env.HOME | path join '.config' 'agents' 'skills' $name)
+  if not ($target | path exists) {
+    ^amp skill add --global $"moonbitlang/skills/skills/($name)"
+  }
+}
+
+let allium_skills = [allium distill elicit propagate tend weed]
+for name in $allium_skills {
+  let target = ($env.HOME | path join '.config' 'agents' 'skills' $name)
+  if not ($target | path exists) {
+    ^amp skill add --global $"juxt/allium/skills/($name)"
+  }
+}
