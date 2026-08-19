@@ -26,7 +26,7 @@
   (println "  scripts/clawhub-release.bb publish --version VERSION [--slug SLUG] [--name NAME] [--tags TAGS] [--changelog TEXT]")
   (println)
   (println "Commands:")
-  (println "  prepare   Generate skills/snlib-cli/references/*.md from src/snlib/*.edn.")
+  (println "  prepare   Generate skills/snlib-cli/references/*.md from clj/src/snlib/*.edn.")
   (println "  publish   Run prepare, then execute clawhub publish against skills/snlib-cli.")
   (println)
   (println "Options:")
@@ -97,9 +97,9 @@
   []
   (fs/create-dirs references-dir)
   (spit (str (fs/path references-dir "lib-code.md"))
-        (generated-reference "src/snlib/lib-code.edn"))
+        (generated-reference "clj/src/snlib/lib-code.edn"))
   (spit (str (fs/path references-dir "manage-code.md"))
-        (generated-reference "src/snlib/manage-code.edn")))
+        (generated-reference "clj/src/snlib/manage-code.edn")))
 
 (defn prepare!
   [_opts]

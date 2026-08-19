@@ -3,6 +3,11 @@
 .cpcache/
 .nrepl-port
 target/
+clj/.cpcache/
+clj/target/
+moonbit/.mooncakes/
+moonbit/_build/
+moonbit/target/
 .credential.edn
 snlib.jar
 *.har

@@ -3,6 +3,16 @@
 ^sudo apt-get update
 ^sudo apt-get install -y curl openjdk-17-jre-headless rlwrap
 
+if (which moon | is-empty) {
+  # Official installer; keep the release channel explicit for repeatable setup.
+  let moonbit_version = 'latest'
+  let moonbit_installer = (mktemp | str trim)
+  ^curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o $moonbit_installer
+  ^bash $moonbit_installer $moonbit_version
+  rm $moonbit_installer
+}
+^sudo ln -sf $'($env.HOME)/.moon/bin/moon' /usr/local/bin/moon
+
 if (which allium | is-empty) {
   let allium_version = '3.5.3'
   let allium_dir = (mktemp -d | str trim)

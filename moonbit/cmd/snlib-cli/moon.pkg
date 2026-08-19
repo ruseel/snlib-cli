@@ -1,0 +1,7 @@
+import {
+  "ruseel/snlib-cli/snlib",
+}
+
+options(
+  "is-main": true,
+)

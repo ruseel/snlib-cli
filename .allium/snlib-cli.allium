@@ -1,0 +1,215 @@
+-- allium: 3
+-- snlib-cli.allium
+--
+-- Scope: Seongnam Library patron workflows currently exposed by the Clojure
+-- implementation. Includes authentication, catalogue discovery, account
+-- records, and the prepare-then-submit book-request workflows. Excludes HTTP,
+-- HTML parsing, credential storage, and the remote service's internal rules.
+
+config {
+    session_duration: Duration = 3.hours
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+entity PatronSession {
+    patron: LibraryPatron
+    authenticated_at: Timestamp
+    status: active | expired | rejected
+
+    is_recent: status = active and authenticated_at + config.session_duration > now
+}
+
+external entity LibraryPatron {
+    user_id: String
+}
+
+external entity CatalogueBook {
+    title: String
+    author: String
+    publisher: String
+    publication_year: String
+    managing_library: String?
+    registration_number: String?
+}
+
+external entity Loan {
+    title: String
+    loan_date: Timestamp?
+    due_date: Timestamp?
+    return_date: Timestamp?
+    status: String
+}
+
+external entity Reservation {
+    title: String
+    registration_number: String
+    status: String
+}
+
+external entity HopeBookRequest {
+    reference: String?
+    title: String
+    author: String
+    status: String?
+}
+
+external entity InterlibraryLoanRequest {
+    registration_number: String
+    managing_library: String
+    status: String?
+}
+
+entity PreparedHopeBookRequest {
+    patron: LibraryPatron
+    title: String
+    author: String
+    managing_library: String?
+    status: ready | submitted | submit_failed
+}
+
+entity PreparedInterlibraryLoanRequest {
+    patron: LibraryPatron
+    book: CatalogueBook
+    receiving_library: String
+    status: ready | submitted | blocked | rejected
+}
+
+------------------------------------------------------------
+-- Patron workflows
+------------------------------------------------------------
+
+rule AuthenticatePatron {
+    when: PatronAuthenticates(patron, credentials)
+
+    requires: LibraryServiceAccepts(credentials)
+
+    ensures: PatronSession.created(
+        patron: patron,
+        authenticated_at: now,
+        status: active
+    )
+}
+
+rule RejectAuthentication {
+    when: PatronAuthenticates(patron, credentials)
+
+    requires: not LibraryServiceAccepts(credentials)
+
+    ensures: PatronSession.created(
+        patron: patron,
+        authenticated_at: now,
+        status: rejected
+    )
+}
+
+rule SearchCatalogue {
+    when: PatronSearchesCatalogue(keyword, libraries, page, page_size, sort, order)
+
+    requires: keyword != null
+
+    ensures: CatalogueSearchReturned(keyword, libraries, page, page_size, sort, order)
+}
+
+rule ViewAccountRecords {
+    when: PatronViewsAccountRecords(session, record_kind)
+
+    requires: session.is_recent
+
+    ensures: AccountRecordsReturned(session.patron, record_kind)
+}
+
+rule PrepareHopeBookRequest {
+    when: PatronPreparesHopeBookRequest(session, request)
+
+    requires: session.is_recent
+
+    ensures: PreparedHopeBookRequest.created(
+        patron: session.patron,
+        title: request.title,
+        author: request.author,
+        managing_library: request.managing_library,
+        status: ready
+    )
+}
+
+rule SubmitHopeBookRequest {
+    when: PatronSubmitsHopeBookRequest(session, request)
+
+    requires: session.is_recent
+    requires: LibraryServiceConfirmsHopeBookRequest(request)
+
+    ensures: request.status = submitted
+}
+
+rule RejectHopeBookRequest {
+  when: PatronSubmitsHopeBookRequest(session, request)
+
+  requires: session.is_recent
+  requires: not LibraryServiceConfirmsHopeBookRequest(request)
+
+  ensures: request.status = submit_failed
+}
+
+rule PrepareInterlibraryLoanRequest {
+    when: PatronPreparesInterlibraryLoanRequest(session, book, receiving_library)
+
+    requires: session.is_recent
+    requires: book.managing_library != null
+    requires: book.registration_number != null
+
+    ensures: PreparedInterlibraryLoanRequest.created(
+        patron: session.patron,
+        book: book,
+        receiving_library: receiving_library,
+        status: ready
+    )
+}
+
+rule SubmitInterlibraryLoanRequest {
+    when: PatronSubmitsInterlibraryLoanRequest(session, request)
+
+    requires: session.is_recent
+    requires: request.status = ready
+    requires: LibraryServiceConfirmsInterlibraryLoan(request)
+
+    ensures: request.status = submitted
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+actor ActivePatron {
+    identified_by: LibraryPatron where exists PatronSession{patron: this, status: active}
+}
+
+surface CatalogueDiscovery {
+    facing visitor: LibraryPatron
+
+    provides:
+        PatronSearchesCatalogue(keyword, libraries, page, page_size, sort, order)
+
+    @guarantee NoSessionRequired
+        -- Catalogue discovery is available without a remembered session.
+}
+
+surface PatronAccount {
+    facing patron: ActivePatron
+
+    provides:
+        PatronAuthenticates(patron, credentials)
+        PatronViewsAccountRecords(session, record_kind)
+        PatronPreparesHopeBookRequest(session, request)
+        PatronSubmitsHopeBookRequest(session, request)
+        PatronPreparesInterlibraryLoanRequest(session, book, receiving_library)
+        PatronSubmitsInterlibraryLoanRequest(session, request)
+}
+
+------------------------------------------------------------
+-- Unconfirmed decisions found while distilling
+------------------------------------------------------------
+
+open question "Which external request statuses are stable domain states rather than display text?"

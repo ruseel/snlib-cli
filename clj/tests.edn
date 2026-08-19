@@ -1,0 +1,4 @@
+;; Kaocha configuration for the Clojure project.
+#kaocha/v1
+{:tests [{:id :unit
+          :test-paths ["test"]}]}
