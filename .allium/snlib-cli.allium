@@ -11,6 +11,9 @@ config {
     session_duration: Duration = 3.hours
 }
 
+-- Library codes are accepted when they are syntactically six ASCII digits;
+-- this model does not require membership in a known-library registry.
+
 ------------------------------------------------------------
 -- Entities
 ------------------------------------------------------------

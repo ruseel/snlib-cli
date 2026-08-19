@@ -5,9 +5,9 @@ CLI for Seongnam Library (`snlib.go.kr`).
 ## Repository layout
 
 - `clj/` contains the existing, functional Clojure implementation and build.
-- `moonbit/` contains the native-target MoonBit foundation; its package shells
-  establish the facade, model, HTML, application, remote, HTTP-session, store,
-  and CLI boundaries. Commands are not implemented yet.
+- `moonbit/` contains the native-target MoonBit implementation. Stage 1 provides
+  the pure typed model, JSON CLI shell, and local session preflight; remote
+  command execution is intentionally not implemented yet.
 - `fixtures/` contains language-neutral HTML fixtures. The JSON manifests in
   `fixtures/snlib/contracts/` describe each fixture flow's input, ordered
   responses, and observed output facts.
@@ -22,14 +22,25 @@ clojure -M -m snlib.cli --help
 clojure -T:build jar :version '"0.1.0"'
 ```
 
-With the MoonBit CLI installed, validate the foundation using
-`moon -C moonbit check`, or run its explicitly non-functional entry point with
-`moon -C moonbit run cmd/snlib-cli`.
+With the MoonBit CLI installed, validate Stage 1 using `moon -C moonbit check`
+and `moon -C moonbit test snlib/model && moon -C moonbit test snlib/cli`.
+The first positional argument selects a command and stdin supplies exactly one
+JSON object. For example:
+
+```bash
+printf '%s\n' '{"keyword":"moonbit"}' |
+  moon -C moonbit run cmd/snlib-cli -- search-books
+```
+
+Every invocation emits one typed JSON result envelope. Valid command input
+currently returns `not-implemented`; account commands return `requires-login`
+until a remembered active session is supplied by a later persistence stage.
 
 The pure `snlib/model` package imports nothing. Adapters depend inward on the
 model/remote boundaries, application composes those ports, the `snlib` facade
-depends on application and model, and `cmd/snlib-cli` depends only on the
-facade. No third-party MoonBit dependency is needed at Stage 0.
+depends on application and model, and the new `snlib/cli` package depends only
+on the model and core JSON. `cmd/snlib-cli` only wires process IO to that shell.
+No third-party MoonBit dependency is needed at Stage 1.
 
 - Account/session (계정/세션): `login`, `my-info` (내 정보 조회)
 - Discovery (도서 탐색): `search-books`, `basket` (관심 도서함)

@@ -1,0 +1,6 @@
+import {
+  "ruseel/snlib-cli/snlib/model",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

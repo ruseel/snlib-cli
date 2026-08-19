@@ -1,5 +1,7 @@
 import {
-  "ruseel/snlib-cli/snlib",
+  "ruseel/snlib-cli/snlib/cli",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
 }
 
 supported_targets = "native"
