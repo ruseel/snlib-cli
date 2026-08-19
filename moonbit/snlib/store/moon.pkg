@@ -1,5 +1,18 @@
 import {
   "ruseel/snlib-cli/snlib/model",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/x/fs",
 }
 
 supported_targets = "native"
+
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/x/fs",
+} for "test"
+
+options(
+  "native-stub": [ "store_native.c" ],
+)

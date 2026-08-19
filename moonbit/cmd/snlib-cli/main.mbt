@@ -23,5 +23,6 @@ fn main {
   } else {
     read_stdin()
   }
-  println(@cli.render(@cli.run(command, input, None, @env.now())))
+  let session = @store.load_session()
+  println(@cli.render(@cli.run(command, input, session, @env.now())))
 }

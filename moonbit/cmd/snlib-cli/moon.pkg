@@ -1,5 +1,6 @@
 import {
   "ruseel/snlib-cli/snlib/cli",
+  "ruseel/snlib-cli/snlib/store",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
 }
