@@ -12,6 +12,7 @@ if (which moon | is-empty) {
   rm $moonbit_installer
 }
 ^sudo ln -sf $'($env.HOME)/.moon/bin/moon' /usr/local/bin/moon
+^sudo ln -sf $'($env.HOME)/.moon/bin/moon-ide' /usr/local/bin/moon-ide
 
 if (which allium | is-empty) {
   let allium_version = '3.5.3'
