@@ -1,5 +1,10 @@
 import {
   "ruseel/snlib-cli/snlib/model",
+  "mizchi/crater-dom/html" @dom,
 }
+
+import {
+  "moonbitlang/x/fs",
+} for "test"
 
 supported_targets = "native"
