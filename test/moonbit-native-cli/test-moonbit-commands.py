@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 spec = importlib.util.spec_from_file_location("native_http", Path(__file__).with_name("test-moonbit-http.py"))
 http = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(http)
-FIXTURES = http.ROOT / "fixtures/snlib"
+FIXTURES = http.ROOT / "test/fixtures/snlib"
 PATHS = {
     "loan-status": http.LOGIN_VERIFY,
     "loan-history": "/intro/menu/10062/program/30021/mypage/loanHistoryList.do",

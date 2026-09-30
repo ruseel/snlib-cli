@@ -21,9 +21,9 @@ from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 BINARY = ROOT / "impl/moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
-FIXTURE = (ROOT / "fixtures/snlib/search-books/interloan-target.html").read_bytes()
+FIXTURE = (ROOT / "test/fixtures/snlib/search-books/interloan-target.html").read_bytes()
 EMPTY = "<html><p class='rtitle'><strong class='themeFC'>0건</strong></p><ul class='resultList imageType'></ul></html>".encode("utf-8")
-ACCOUNT = (ROOT / "fixtures/snlib/my-info/page.html").read_bytes()
+ACCOUNT = (ROOT / "test/fixtures/snlib/my-info/page.html").read_bytes()
 DUMMY_PASSWORD = "dummy&+비밀번호 =?"
 LOGIN_PAGE = "/intro/memberLogin.do"
 LOGIN_POST = "/intro/menu/10068/program/30025/memberLoginProc.do"

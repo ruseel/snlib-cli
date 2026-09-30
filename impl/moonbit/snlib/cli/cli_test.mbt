@@ -65,7 +65,7 @@ test "JSON envelope and malformed input are stable" {
 ///|
 test "search CLI renders fixture result as structured JSON data" {
   let html = @fs.read_file_to_string(
-    "../../fixtures/snlib/search-books/hope-book-target.html",
+    "../../test/fixtures/snlib/search-books/hope-book-target.html",
   )
   let result = @cli.run_with_transport(
     "search-books",
