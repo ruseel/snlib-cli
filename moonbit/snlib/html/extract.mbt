@@ -194,7 +194,7 @@ pub fn extract_catalogue(
       Some(item)
     })
     .to_array()
-  { total_count: decimal(text(total)), items }
+  { total_count: decimal(text(total)), items, }
 }
 
 ///|
@@ -287,7 +287,7 @@ pub fn extract_hope_defaults(
   let phone = "\{p1}-\{p2}-\{p3}"
   fields["handPhone"] = phone
   fields["phone"] = phone
-  { email, mobile_no_1: p1, mobile_no_2: p2, mobile_no_3: p3, phone, fields }
+  { email, mobile_no_1: p1, mobile_no_2: p2, mobile_no_3: p3, phone, fields, }
 }
 
 ///|

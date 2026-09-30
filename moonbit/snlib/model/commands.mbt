@@ -23,7 +23,7 @@ pub fn search_books_input(
   sort? : String = "SIMILAR",
   order? : String = "DESC",
 ) -> SearchBooksInput {
-  { keyword, manage_codes, page, per_page, sort, order }
+  { keyword, manage_codes, page, per_page, sort, order, }
 }
 
 ///|

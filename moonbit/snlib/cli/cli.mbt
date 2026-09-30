@@ -62,9 +62,39 @@ fn outcome_name(outcome : @model.Outcome) -> String {
 }
 
 ///|
+fn catalogue_book_json(book : @model.CatalogueBook) -> Json {
+  Json::object({
+    "title": Json::string(book.title),
+    "author": Json::string(book.author),
+    "publisher": Json::string(book.publisher),
+    "publication_year": Json::string(book.publication_year),
+    "manage_code": Json::string(book.manage_code),
+    "registration_number": Json::string(book.registration_number),
+  })
+}
+
+///|
+fn command_data_json(data : @model.CommandData) -> Json {
+  match data {
+    SearchBooksResult(search) =>
+      Json::object({
+        "items": Json::array(search.items.map(catalogue_book_json)),
+        "page": Json::number(
+          search.page.to_double(),
+          repr=search.page.to_string(),
+        ),
+        "total_count": Json::number(
+          search.total_count.to_double(),
+          repr=search.total_count.to_string(),
+        ),
+      })
+  }
+}
+
+///|
 pub fn render(result : @model.CommandResult) -> String {
   let data = match result.data {
-    Some(value) => Json::string(value)
+    Some(value) => command_data_json(value)
     None => Json::null()
   }
   Json::object({
@@ -132,15 +162,16 @@ fn validate_input(command : String, json : Json) -> @model.CommandInput? {
   match command {
     "login" =>
       match (decode(json) : LoginWire?) {
-        Some({ user_id: Some(user_id), password: Some(password) }) =>
-          Some(@model.Login({ user_id, password }))
+        Some({ user_id: Some(user_id), password: Some(password), }) =>
+          Some(@model.Login({ user_id, password, }))
         _ => None
       }
     "search-books" =>
       match (decode(json) : SearchWire?) {
         Some(
-          { keyword: Some(keyword), manage_codes, page, per_page, sort, order }
+          { keyword: Some(keyword), manage_codes, page, per_page, sort, order, }
         ) => {
+          guard keyword.trim() != "" else { None }
           let codes = manage_codes.unwrap_or([])
           guard codes.all(code => {
             @model.valid_manage_code(@model.normalize_manage_code(code))
@@ -220,13 +251,13 @@ fn validate_input(command : String, json : Json) -> @model.CommandInput? {
     "hope-book-list" => Some(@model.HopeBookList)
     "hope-book-detail" =>
       match (decode(json) : DetailWire?) {
-        Some({ rec_key: Some(rec_key) }) =>
+        Some({ rec_key: Some(rec_key), }) =>
           Some(@model.HopeBookDetail({ rec_key, }))
         _ => None
       }
     "basket-list" =>
       (decode(json) : BasketWire?).map(wire => {
-        @model.BasketList({ group_key: wire.group_key })
+        @model.BasketList({ group_key: wire.group_key, })
       })
     _ => None
   }
@@ -253,11 +284,12 @@ fn known_command(command : String) -> Bool {
 }
 
 ///|
-pub fn run(
+fn run_internal(
   command : String,
   input : String,
   session : @model.Session?,
   now_ms : UInt64,
+  transport : ((@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError)?,
 ) -> @model.CommandResult {
   if command == "help" || command == "--help" {
     return @model.command_result(NotImplemented, "usage", usage)
@@ -271,7 +303,7 @@ pub fn run(
   guard json is Object(_) else {
     return invalid("expected-object", "stdin must contain one JSON object.")
   }
-  guard validate_input(command, json) is Some(_) else {
+  guard validate_input(command, json) is Some(command_input) else {
     return invalid(
       "invalid-command-input", "Input does not match the command schema.",
     )
@@ -279,9 +311,35 @@ pub fn run(
   if preflight(command, session, now_ms) is Some(result) {
     return result
   }
+  match (command_input, transport) {
+    (SearchBooks(search), Some(send)) =>
+      return @application.search_books(search, send)
+    _ => ()
+  }
   @model.command_result(
     NotImplemented,
     "stage-1-no-remote",
     "Command input is valid, but remote execution is not implemented.",
   )
+}
+
+///|
+pub fn run(
+  command : String,
+  input : String,
+  session : @model.Session?,
+  now_ms : UInt64,
+) -> @model.CommandResult {
+  run_internal(command, input, session, now_ms, None)
+}
+
+///|
+pub fn run_with_transport(
+  command : String,
+  input : String,
+  session : @model.Session?,
+  now_ms : UInt64,
+  transport : (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError,
+) -> @model.CommandResult {
+  run_internal(command, input, session, now_ms, Some(transport))
 }

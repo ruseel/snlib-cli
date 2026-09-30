@@ -50,7 +50,7 @@ test "invalid and unsupported session JSON is ignored" {
 }
 
 ///|
-test "legacy Clojure session migrates once to versioned JSON" {
+test "legacy Clojure session is copied without deleting cookie-bearing EDN" {
   let dir = test_dir("legacy")
   @fs.create_dir(dir)
   let json_path = "\{dir}/session.json"
@@ -64,7 +64,8 @@ test "legacy Clojure session migrates once to versioned JSON" {
   }
   assert_eq(session.authenticated_at_ms, 456789UL)
   assert_true(@fs.path_exists(json_path))
-  assert_false(@fs.path_exists(legacy_path))
+  assert_true(@fs.path_exists(legacy_path))
   @fs.remove_file(json_path)
+  @fs.remove_file(legacy_path)
   @fs.remove_dir(dir)
 }

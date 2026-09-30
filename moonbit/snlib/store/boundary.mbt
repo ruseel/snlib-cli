@@ -158,9 +158,8 @@ pub fn load_session_with_legacy_at(
     status: Active,
   }
   guard save_session_at(json_path, session) else { return None }
-  @fs.remove_file(legacy_path) catch {
-    _ => ()
-  }
+  // The legacy EDN also contains cookies that this stage cannot decode yet.
+  // Keep it until cookie-aware migration can preserve the complete session.
   Some(session)
 }
 
@@ -203,7 +202,7 @@ pub fn load_credentials_at(path : String) -> Credentials? {
     wire => Some(wire)
   }
   guard decoded is Some(wire) && wire.version == 1 else { return None }
-  Some({ user_id: wire.user_id, password: wire.password })
+  Some({ user_id: wire.user_id, password: wire.password, })
 }
 
 ///|

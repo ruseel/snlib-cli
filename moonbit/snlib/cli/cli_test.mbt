@@ -41,6 +41,9 @@ test "login and search are exempt from session preflight" {
     0UL,
   )
   assert_eq(search.outcome, NotImplemented)
+  let blank = @cli.run("search-books", "{\"keyword\":\"  \"}", None, 0UL)
+  assert_eq(blank.outcome, InvalidInput)
+  assert_eq(blank.code, "invalid-command-input")
 }
 
 ///|
@@ -57,4 +60,25 @@ test "JSON envelope and malformed input are stable" {
   assert_eq(malformed.outcome, InvalidInput)
   assert_eq(malformed.code, "malformed-json")
   assert_eq(@cli.run("nope", "{}", None, 0UL).code, "unknown-command")
+}
+
+///|
+test "search CLI renders fixture result as structured JSON data" {
+  let html = @fs.read_file_to_string(
+    "../fixtures/snlib/search-books/hope-book-target.html",
+  )
+  let result = @cli.run_with_transport(
+    "search-books",
+    "{\"keyword\":\"삼국지 2\"}",
+    None,
+    0UL,
+    _ => ({ status: 200, body: html, } : @remote.HttpResponse),
+  )
+  assert_eq(result.outcome, Ok)
+  inspect(
+    @cli.render(result),
+    content=(
+      #|{"outcome":"ok","code":"search-ok","message":"Catalogue search completed.","data":{"items":[{"title":"삼국지 2, 적벽대전","author":"나관중 지음 ; 테스트번역 옮김","publisher":"가상출판사","publication_year":"2024","manage_code":"MP","registration_number":"FIC000000202"}],"page":1,"total_count":1}}
+    ),
+  )
 }
