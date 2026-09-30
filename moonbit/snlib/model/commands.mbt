@@ -44,6 +44,7 @@ pub(all) struct InterloanRequestInput {
   give_lib_code : String?
   user_key : String?
   appendix_apply_yn : String
+  submit : Bool
 } derive(Eq, Debug)
 
 ///|
@@ -54,6 +55,7 @@ pub fn interloan_request_input(
   give_lib_code? : String,
   user_key? : String,
   appendix_apply_yn? : String = "N",
+  submit? : Bool = false,
 ) -> InterloanRequestInput {
   {
     manage_code,
@@ -62,6 +64,7 @@ pub fn interloan_request_input(
     give_lib_code,
     user_key,
     appendix_apply_yn,
+    submit,
   }
 }
 
@@ -69,6 +72,7 @@ pub fn interloan_request_input(
 pub(all) struct HopeBookRequestInput {
   manage_code : String?
   request : Map[String, String]
+  submit : Bool
 } derive(Eq, Debug)
 
 ///|

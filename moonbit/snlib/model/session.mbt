@@ -20,5 +20,6 @@ pub let session_duration_ms : UInt64 = 3UL * 60UL * 60UL * 1000UL
 pub fn Session::is_usable(self : Session, now_ms : UInt64) -> Bool {
   self.remembered &&
   self.status == Active &&
-  now_ms < self.authenticated_at_ms + session_duration_ms
+  now_ms >= self.authenticated_at_ms &&
+  now_ms - self.authenticated_at_ms < session_duration_ms
 }

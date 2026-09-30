@@ -45,7 +45,8 @@ MOONBIT_FFI_EXPORT int32_t snlib_store_secure_write(
     if (amount <= 0) goto fail;
     written += (int32_t)amount;
   }
-  if (fsync(fd) != 0 || close(fd) != 0) { fd = -1; goto fail; }
+  if (fsync(fd) != 0) goto fail;
+  if (close(fd) != 0) { fd = -1; goto fail; }
   fd = -1;
   if (rename(temporary, path) != 0) goto fail;
   free(temporary);

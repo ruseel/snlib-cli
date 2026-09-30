@@ -50,21 +50,45 @@ test "invalid and unsupported session JSON is ignored" {
 }
 
 ///|
-test "legacy Clojure session migrates once to versioned JSON" {
+test "legacy cookies remain untouched and are not native authentication" {
   let dir = test_dir("legacy")
   @fs.create_dir(dir)
   let json_path = "\{dir}/session.json"
   let legacy_path = "\{dir}/session.edn"
-  @fs.write_string_to_file(
-    legacy_path, "{:saved-at-ms 123 :last-login-at-ms 456789 :cookies []}",
-  )
-  guard @store.load_session_with_legacy_at(json_path, legacy_path)
-    is Some(session) else {
-    fail("expected migrated session")
-  }
-  assert_eq(session.authenticated_at_ms, 456789UL)
-  assert_true(@fs.path_exists(json_path))
-  assert_false(@fs.path_exists(legacy_path))
+  let legacy = "{:last-login-at-ms 456789 :cookies [{:name \"JSESSIONID\" :value \"fictional\"}]}"
+  @fs.write_string_to_file(legacy_path, legacy)
+  assert_eq(@store.load_session_with_legacy_at(json_path, legacy_path), None)
+  assert_false(@fs.path_exists(json_path))
+  assert_eq(@fs.read_file_to_string(legacy_path), legacy)
+  // An invalid native file must not trigger destructive legacy recovery either.
+  @fs.write_string_to_file(json_path, "not json")
+  assert_eq(@store.load_session_with_legacy_at(json_path, legacy_path), None)
+  assert_eq(@fs.read_file_to_string(json_path), "not json")
+  assert_eq(@fs.read_file_to_string(legacy_path), legacy)
   @fs.remove_file(json_path)
+  @fs.remove_file(legacy_path)
+  @fs.remove_dir(dir)
+}
+
+///|
+test "native session takes precedence without modifying legacy cookies" {
+  let dir = test_dir("native-and-legacy")
+  let json_path = "\{dir}/session.json"
+  let legacy_path = "\{dir}/session.edn"
+  let session : @model.Session = {
+    patron_id: "native",
+    authenticated_at_ms: 1000UL,
+    remembered: true,
+    status: Active,
+  }
+  assert_true(@store.save_session_at(json_path, session))
+  @fs.write_string_to_file(legacy_path, "legacy cookie data")
+  assert_eq(
+    @store.load_session_with_legacy_at(json_path, legacy_path),
+    Some(session),
+  )
+  assert_eq(@fs.read_file_to_string(legacy_path), "legacy cookie data")
+  @fs.remove_file(json_path)
+  @fs.remove_file(legacy_path)
   @fs.remove_dir(dir)
 }

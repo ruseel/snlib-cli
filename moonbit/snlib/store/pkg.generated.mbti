@@ -1,0 +1,69 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/store"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "ruseel/snlib-cli/snlib/model",
+}
+
+// Values
+pub fn config_dir() -> String?
+
+pub fn credentials_path() -> String?
+
+pub fn file_mode_at(String) -> Int?
+
+pub fn invalidate_session(UInt64) -> Bool
+
+pub fn load_authenticated() -> AuthenticatedSession?
+
+pub fn load_authenticated_at(String) -> AuthenticatedSession?
+
+pub fn load_credentials() -> Credentials?
+
+pub fn load_credentials_at(String) -> Credentials?
+
+pub fn load_session() -> @model.Session?
+
+pub fn load_session_at(String) -> @model.Session?
+
+pub fn load_session_with_legacy_at(String, String) -> @model.Session?
+
+pub fn save_authenticated(AuthenticatedSession) -> Bool
+
+pub fn save_authenticated_at(String, AuthenticatedSession) -> Bool
+
+pub fn save_credentials(Credentials) -> Bool
+
+pub fn save_credentials_at(String, Credentials) -> Bool
+
+pub fn save_session(@model.Session) -> Bool
+
+pub fn save_session_at(String, @model.Session) -> Bool
+
+pub fn session_path() -> String?
+
+// Errors
+
+// Types and methods
+pub(all) struct AuthenticatedSession {
+  session : @model.Session
+  base_url : String
+  cookies : Array[String]
+} derive(Eq, @debug.Debug)
+
+type AuthenticatedWire derive(@json.FromJson)
+
+pub(all) struct Credentials {
+  user_id : String
+  password : String
+} derive(Eq, @debug.Debug)
+
+type CredentialsWire derive(@json.FromJson)
+
+type SessionWire derive(@json.FromJson)
+
+// Type aliases
+
+// Traits

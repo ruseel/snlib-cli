@@ -1,1 +1,1 @@
-// HTML interpretation boundary. Extraction is intentionally deferred.
+// HTML interpretation boundary. See extract.mbt and the account/form extractors.

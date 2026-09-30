@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/cli"
+
+import {
+  "moonbitlang/core/json",
+  "ruseel/snlib-cli/snlib/model",
+  "ruseel/snlib-cli/snlib/remote",
+}
+
+// Values
+pub fn preflight(String, @model.Session?, UInt64) -> @model.CommandResult?
+
+pub fn render(@model.CommandResult) -> String
+
+pub fn run(String, String, @model.Session?, UInt64) -> @model.CommandResult
+
+pub fn run_with_transport(String, String, @model.Session?, UInt64, (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+pub let usage : String
+
+// Errors
+
+// Types and methods
+type BasketWire derive(@json.FromJson)
+
+type DetailWire derive(@json.FromJson)
+
+type HopeWire derive(@json.FromJson)
+
+type InterloanWire derive(@json.FromJson)
+
+type LoanStatusWire derive(@json.FromJson)
+
+type LoginWire derive(@json.FromJson)
+
+type SearchWire derive(@json.FromJson)
+
+// Type aliases
+
+// Traits

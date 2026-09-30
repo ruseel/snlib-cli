@@ -97,8 +97,9 @@ pub fn load_session_at(path : String) -> @model.Session? {
     wire => Some(wire)
   }
   guard decoded is Some(wire) &&
-    wire.version == 1 &&
-    wire.authenticated_at_ms >= 0.0 else {
+    (wire.version == 1 || wire.version == 2) &&
+    wire.authenticated_at_ms >= 0.0 &&
+    wire.authenticated_at_ms < 9007199254740992.0 else {
     return None
   }
   let status = match wire.status {
@@ -116,52 +117,13 @@ pub fn load_session_at(path : String) -> @model.Session? {
 }
 
 ///|
-fn legacy_login_time(input : String) -> UInt64? {
-  guard input.split_once(":last-login-at-ms") is Some((_, rest)) else {
-    return None
-  }
-  let mut value = 0UL
-  let mut found = false
-  for char in rest {
-    if char >= '0' && char <= '9' {
-      found = true
-      value = value * 10UL +
-        UInt64::extend_uint((char.to_int() - '0').reinterpret_as_uint())
-    } else if found {
-      break
-    }
-  }
-  if found {
-    Some(value)
-  } else {
-    None
-  }
-}
-
-///|
+/// Legacy EDN cookies cannot be represented by this metadata-only store.
+/// Retain this compatibility entry point, but never migrate or delete legacy data.
 pub fn load_session_with_legacy_at(
   json_path : String,
-  legacy_path : String,
+  _legacy_path : String,
 ) -> @model.Session? {
-  if load_session_at(json_path) is Some(session) {
-    return Some(session)
-  }
-  guard @fs.path_exists(legacy_path) else { return None }
-  let input = @fs.read_file_to_string(legacy_path) catch { _ => return None }
-  guard legacy_login_time(input) is Some(authenticated_at_ms) else {
-    return None
-  }
-  let session : @model.Session = {
-    patron_id: "legacy-clojure-session",
-    authenticated_at_ms,
-    remembered: true,
-    status: Active,
-  }
-  guard save_session_at(json_path, session) else { return None }
-  @fs.remove_file(legacy_path) catch {
-    _ => ()
-  }
-  Some(session)
+  load_session_at(json_path)
 }
 
 ///|
@@ -216,11 +178,9 @@ pub fn load_credentials() -> Credentials? {
 
 ///|
 pub fn load_session() -> @model.Session? {
-  match (session_path(), @env.get_env_var("HOME")) {
-    (Some(path), Some(home)) =>
-      load_session_with_legacy_at(path, "\{home}/.config/snlib-cli/session.edn")
-    (Some(path), None) => load_session_at(path)
-    _ => None
+  match session_path() {
+    Some(path) => load_session_at(path)
+    None => None
   }
 }
 

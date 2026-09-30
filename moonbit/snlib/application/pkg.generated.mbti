@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/application"
+
+import {
+  "ruseel/snlib-cli/snlib/model",
+  "ruseel/snlib-cli/snlib/remote",
+}
+
+// Values
+pub fn account_query(String, @model.CommandInput, (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+pub fn login(@model.LoginInput, (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+pub fn my_info((@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+pub fn search_books(@model.SearchBooksInput, (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+pub fn submit_request(String, @model.CommandInput, (@remote.HttpRequest) -> @remote.HttpResponse raise @remote.TransportError) -> @model.CommandResult
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

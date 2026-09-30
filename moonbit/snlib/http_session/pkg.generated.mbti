@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/http_session"
+
+import {
+  "ruseel/snlib-cli/snlib/remote",
+}
+
+// Values
+pub fn exchange(@remote.HttpRequest, Array[String], base_url? : String) -> Exchange raise @remote.TransportError
+
+pub fn send(@remote.HttpRequest, base_url? : String) -> @remote.HttpResponse raise @remote.TransportError
+
+// Errors
+
+// Types and methods
+pub(all) struct Exchange {
+  response : @remote.HttpResponse
+  cookies : Array[String]
+}
+
+// Type aliases
+
+// Traits

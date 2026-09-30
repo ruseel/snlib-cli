@@ -93,8 +93,70 @@ fn decimal(source : String) -> Int {
 ///|
 pub fn logged_out(html : String) -> Bool {
   let root = @dom.parse_document(html).root
+  if html.contains("로그인 후 이용가능합니다") ||
+    html.contains("location.href='/intro/memberLogin.do'") ||
+    html.contains("location.href=\"/intro/memberLogin.do\"") ||
+    html.contains("document.redirectForm") ||
+    !descendants(root, e => {
+      e.tag == "form" &&
+      (
+        e.attributes.get("id") == Some("redirectForm") ||
+        e.attributes.get("id") == Some("loginForm")
+      )
+    }).is_empty() {
+    return true
+  }
   descendants(root, e => e.tag == "li" && has_class(e, "logout")).is_empty() &&
   descendants(root, e => e.tag == "a" && text(e) == "로그인").length() > 0
+}
+
+///|
+pub fn authenticated_page(html : String) -> Bool {
+  if logged_out(html) {
+    return false
+  }
+  let root = @dom.parse_document(html).root
+  !descendants(root, e => {
+    e.tag == "a" && e.attributes.get("href") == Some("/intro/memberLogout.do")
+  }).is_empty()
+}
+
+///|
+pub fn extract_my_info(
+  html : String,
+) -> @model.MyInfoData raise @model.ExtractionError {
+  let root = @dom.parse_document(html).root
+  guard descendants(root, e => has_class(e, "myInfo"))
+    .iter()
+    .find_first(_ => true)
+    is Some(info) else {
+    raise @model.MissingField("myInfo")
+  }
+  let fields : Map[String, String] = Map([])
+  for list in descendants(info, e => has_class(e, "dot-list")) {
+    for item in descendants(list, e => e.tag == "li") {
+      if text(item).split_once(":") is Some((label, content)) {
+        fields[label.trim().to_owned()] = content.trim().to_owned()
+      }
+    }
+  }
+  guard fields.get("아이디") is Some(user_id) && user_id.trim() != "" else {
+    raise @model.MissingField("account user ID")
+  }
+  let member_type = descendants(info, e => has_class(e, "memType"))
+    .iter()
+    .flat_map(e => descendants(e, child => child.tag == "strong").iter())
+    .find_first(_ => true)
+    .map(text)
+  {
+    user_id,
+    member_no: fields.get("회원번호"),
+    member_type,
+    join_date: fields.get("회원가입일"),
+    privacy_expiry_date: fields.get("개인정보동의 만료일"),
+    phone: fields.get("휴대폰번호"),
+    email: fields.get("이메일주소"),
+  }
 }
 
 ///|
@@ -148,29 +210,7 @@ pub fn extract_catalogue(
         .iter()
         .map(text)
         .to_array()
-      let onclicks = descendants(row, e => e.attributes.contains("onclick")).map(e => {
-          e.attributes["onclick"]
-        },
-      )
-      let registration = onclicks
-        .iter()
-        .flat_map(s => s.split("'"))
-        .find_first(s => s.has_prefix("FIC"))
-        .map(s => s.to_owned())
-        .unwrap_or("")
-      let mut manage = ""
-      for onclick in onclicks {
-        let parts = onclick.split("'").to_array()
-        for i, part in parts {
-          if part == registration && i >= 2 {
-            if parts[i - 2].length() == 2 {
-              manage = parts[i - 2].to_owned()
-            } else if i + 2 < parts.length() {
-              manage = parts[i + 2].to_owned()
-            }
-          }
-        }
-      }
+      let (manage, registration) = catalogue_identity(row)
       let item : @model.CatalogueBook = {
         title: text(title_link),
         author: spans

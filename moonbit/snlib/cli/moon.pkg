@@ -1,6 +1,12 @@
 import {
+  "ruseel/snlib-cli/snlib/application",
   "ruseel/snlib-cli/snlib/model",
+  "ruseel/snlib-cli/snlib/remote",
   "moonbitlang/core/json",
 }
+
+import {
+  "moonbitlang/x/fs",
+} for "test"
 
 supported_targets = "native"

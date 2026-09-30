@@ -1,0 +1,112 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/remote"
+
+import {
+  "moonbitlang/core/debug",
+  "ruseel/snlib-cli/snlib/model",
+}
+
+// Values
+pub fn account_query(@model.CommandInput, (HttpRequest) -> HttpResponse raise TransportError) -> @model.CommandData raise CommandRemoteError
+
+pub let basket_books_path : String
+
+pub let basket_main_path : String
+
+pub fn build_search_request(@model.SearchBooksInput) -> HttpRequest
+
+pub let default_base_url : String
+
+pub let hope_detail_path : String
+
+pub let hope_list_path : String
+
+pub let hope_page_path : String
+
+pub let hope_submit_path : String
+
+pub let interloan_popup_path : String
+
+pub let interloan_status_path : String
+
+pub let interloan_submit_path : String
+
+pub let loan_history_path : String
+
+pub fn login(@model.LoginInput, (HttpRequest) -> HttpResponse raise TransportError) -> LoginStatus
+
+pub let login_page_path : String
+
+pub let login_submit_path : String
+
+pub let login_verify_path : String
+
+pub fn my_info((HttpRequest) -> HttpResponse raise TransportError) -> AccountResult
+
+pub let my_info_path : String
+
+pub let reservation_path : String
+
+pub fn search_books(@model.SearchBooksInput, (HttpRequest) -> HttpResponse raise TransportError) -> SearchResult
+
+pub let search_path : String
+
+pub fn submit_request(@model.CommandInput, (HttpRequest) -> HttpResponse raise TransportError) -> @model.SubmissionData raise CommandRemoteError
+
+// Errors
+pub(all) suberror CommandRemoteError {
+  SessionRejected
+  RequestFailure(RemoteError)
+  InvalidPayload(String)
+  SubmissionRejected(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror TransportError {
+  Failed(String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum AccountResult {
+  AccountInfo(@model.MyInfoData)
+  AccountLoggedOut
+  AccountFailure(RemoteError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum HttpMethod {
+  Get
+  Post(Map[String, String])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct HttpRequest {
+  verb : HttpMethod
+  base_url : String
+  path : String
+  query : Map[String, Array[String]]
+  headers : Map[String, String]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct HttpResponse {
+  status : Int
+  body : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum LoginStatus {
+  LoginSuccess
+  LoginRejected
+  LoginFailure(RemoteError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RemoteError {
+  Network(String)
+  HttpStatus(Int)
+  Parse(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SearchResult {
+  Success(@model.CatalogueSearch)
+  Failure(RemoteError)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
