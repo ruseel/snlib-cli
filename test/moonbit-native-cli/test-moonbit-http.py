@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline native CLI/HTTP integration tests. Run: python3 scripts/test-moonbit-http.py
+"""Offline native CLI/HTTP integration tests. Run: python3 test/moonbit-native-cli/test-moonbit-http.py
 
 Requires moon, a C compiler, libcurl development files, and optionally openssl
 (for the untrusted TLS certificate test). No library account or live server used.
@@ -19,8 +19,8 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-ROOT = Path(__file__).resolve().parents[1]
-BINARY = ROOT / "moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
+ROOT = Path(__file__).resolve().parents[2]
+BINARY = ROOT / "impl/moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
 FIXTURE = (ROOT / "fixtures/snlib/search-books/interloan-target.html").read_bytes()
 EMPTY = "<html><p class='rtitle'><strong class='themeFC'>0건</strong></p><ul class='resultList imageType'></ul></html>".encode("utf-8")
 ACCOUNT = (ROOT / "fixtures/snlib/my-info/page.html").read_bytes()
@@ -165,7 +165,7 @@ def start_server(context=None):
 class NativeCliTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        subprocess.run(["moon", "-C", "moonbit", "build", "--target", "native"], cwd=ROOT, check=True)
+        subprocess.run(["moon", "-C", "impl/moonbit", "build", "--target", "native"], cwd=ROOT, check=True)
         cls.server, cls.thread = start_server()
 
     @classmethod

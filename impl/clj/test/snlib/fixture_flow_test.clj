@@ -8,7 +8,7 @@
 
 (defn- fixture-html
   [relative-path]
-  (slurp (io/file ".." "fixtures" "snlib" relative-path)))
+  (slurp (io/file ".." ".." "fixtures" "snlib" relative-path)))
 
 (defn- with-request-stub
   [responses f]

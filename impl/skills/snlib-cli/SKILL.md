@@ -1,7 +1,7 @@
 ---
 name: snlib-cli
 description: Run Seongnam Library (snlib.go.kr) tasks with the native MoonBit CLI: login, book search, account/loan/reservation status, interlibrary loans, hope-book requests, and basket queries. Prepare write requests first and submit only after explicit user confirmation.
-metadata: { "openclaw": { "requires": { "bins": ["bash", "moon", "cc"] } } }
+metadata: { "openclaw": { "requires": { "bins": ["bash", "curl"] } } }
 ---
 
 # snlib-cli (MoonBit)
@@ -12,23 +12,27 @@ payloads, and `SNLIB_USER` / `SNLIB_PASSWORD` are not used by this launcher.
 
 ## Setup
 
-Install MoonBit (`moon`), a native C compiler, and libcurl development files.
-On macOS, Xcode Command Line Tools provide the compiler and system libcurl.
-On Debian/Ubuntu, install `build-essential` and `libcurl4-openssl-dev`.
+Requires Bash, curl, and either `sha256sum` or `shasum`. No MoonBit,
+compiler, or source checkout is needed. The native executable uses the system
+libcurl runtime (on Debian/Ubuntu, install `libcurl4` or `libcurl4t64` as
+appropriate for your distribution).
 
-Inside this repository, the launcher finds `moonbit/` relative to itself.
-For a separately installed skill bundle, obtain the source checkout:
+Supported release assets: macOS ARM64/x86-64 and glibc Linux ARM64/x86-64.
+Linux x86-64 builds target Ubuntu 22.04; ARM64 builds target Ubuntu 24.04.
+Alpine/musl, Windows, and older runtime libraries are not supported.
 
-```bash
-git clone --branch moonbit https://github.com/ruseel/snlib-cli.git /path/to/snlib-cli
-export SNLIB_MOONBIT_DIR="/path/to/snlib-cli/moonbit"
-moon -C "$SNLIB_MOONBIT_DIR" update
-```
+On first use, the launcher downloads the matching prebuilt binary from
+`https://github.com/ruseel/snlib-cli/releases/download/<pinned-tag>/`.
+The tag and SHA-256 checksums are pinned in
+`{baseDir}/references/native-release.txt`. A checksum mismatch stops execution.
+The binary is cached under `$XDG_CACHE_HOME/snlib-cli` (default
+`~/.cache/snlib-cli`) and verified on every invocation. Once cached, no
+download is needed. Downloads do not consume the JSON input or login password.
 
-Use an absolute path. Initialize a fresh dependency registry once with
-`moon update`. The launcher builds/runs the native package; it does not
-download the repository or fall back to Clojure. First builds require network
-access for dependencies. Build diagnostics are separate from JSON results.
+For offline/local development only, set `SNLIB_CLI_BINARY` to an absolute path
+to an already-built, trusted native executable. This explicitly bypasses
+release downloading and checksum verification. The launcher never compiles
+code, downloads a source repository, or falls back to Clojure.
 
 ## Quick Start
 
@@ -80,9 +84,13 @@ Read `{baseDir}/references/commands.md` for JSON patterns.
 
 ## Troubleshooting
 
-- Source missing: set `SNLIB_MOONBIT_DIR` to the checkout's `moonbit/`.
-- Build failure: check MoonBit, C compiler, and libcurl headers/library.
-- Missing registry: run `moon -C "$SNLIB_MOONBIT_DIR" update`.
+- Release manifest missing: this is an unprepared source checkout; the
+  maintainer must run `clawhub-release.bb prepare --version VERSION`.
+- Download failure: check network access to GitHub and the pinned release.
+- Checksum mismatch: do not execute the file; reinstall the trusted skill or
+  remove the corrupted cached file and retry.
+- Unsupported platform / missing runtime library: use a supported OS/architecture
+  and install the libcurl runtime. No source build is attempted.
 - JSON/input errors: pipe one JSON object; check `references/commands.md`.
 - `session-missing`, `session-expired`, or `session-rejected`: log in again.
 - `session-origin-mismatch`: log in for the selected server.

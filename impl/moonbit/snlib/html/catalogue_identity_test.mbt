@@ -1,7 +1,7 @@
 ///|
 test "catalogue identifiers are independent of anonymized fixture prefixes" {
   let source = @fs.read_file_to_string(
-    "../fixtures/snlib/search-books/interloan-target.html",
+    "../../fixtures/snlib/search-books/interloan-target.html",
   )
   for prefix in ["CEM", "GEM", "ABC"] {
     let html = source.split("FIC").join(prefix)

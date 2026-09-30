@@ -5,10 +5,17 @@ on stdin; output is one JSON envelope with `outcome`, `code`, `message`, and
 typed `data`. Field names use snake_case. Inspect the envelope: command failures
 currently do not set a nonzero process exit code.
 
-Run via `skills/snlib-cli/scripts/snlib-cli.sh` in a repository checkout, or set
-`SNLIB_MOONBIT_DIR` to an absolute path to `moonbit/` for a separately installed
-skill. Requires MoonBit, a C compiler, and libcurl headers/library.
-Run `moon -C moonbit update` once for a fresh registry.
+The published `impl/skills/snlib-cli/scripts/snlib-cli.sh` downloads and runs a
+version-pinned, checksum-verified native binary from GitHub Releases. It requires
+Bash, curl, a SHA-256 tool, and the libcurl runtime—not MoonBit or a compiler.
+See [native releases](native-releases.md) for supported platforms and publishing.
+
+For source development, build with `moon -C impl/moonbit build --target native`
+(requires MoonBit, a C compiler, and libcurl headers/library; run
+`moon -C impl/moonbit update` once for a fresh registry). Then set
+`SNLIB_CLI_BINARY` to the absolute path of
+`impl/moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe`
+to run the launcher without downloading a release.
 
 ## Authentication and discovery
 
@@ -127,11 +134,12 @@ with future website changes.
 ## Offline validation
 
 ```bash
-moon -C moonbit check --target native
-moon -C moonbit test --target native
-moon -C moonbit build --target native
-python3 scripts/test-moonbit-http.py
-python3 scripts/test-moonbit-commands.py
-python3 scripts/test-moonbit-regressions.py
-python3 scripts/test-skill-launcher.py
+moon -C impl/moonbit check --target native
+moon -C impl/moonbit test --target native
+moon -C impl/moonbit build --target native
+python3 test/moonbit-native-cli/test-moonbit-http.py
+python3 test/moonbit-native-cli/test-moonbit-commands.py
+python3 test/moonbit-native-cli/test-moonbit-regressions.py
+python3 test/skill-sh-test/test-skill-launcher.py
+python3 test/skill-sh-test/test-release.py
 ```

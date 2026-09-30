@@ -132,7 +132,7 @@ class CommandHandler(http.Handler):
 class CommandsTest(http.NativeCliTest):
     @classmethod
     def setUpClass(cls):
-        subprocess.run(["moon", "-C", "moonbit", "build", "--target", "native"], cwd=http.ROOT, check=True)
+        subprocess.run(["moon", "-C", "impl/moonbit", "build", "--target", "native"], cwd=http.ROOT, check=True)
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), CommandHandler)
         cls.server.mode = "fixture"
         cls.server.requests, cls.server.forms = [], []

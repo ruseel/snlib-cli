@@ -4,7 +4,7 @@
 - Hooks auto-run on `git commit` via `prek`.
 
 ## When checking snlib-cli.sh would running
-To check shell file(skills/snlib-cli/scripts/snlib-cli.sh) would run in user's environment
+To check shell file(impl/skills/snlib-cli/scripts/snlib-cli.sh) would run in user's environment
   maven local repo location should be override, not to use dev machine's local repo.
 
 adding :mvn/local-repo works

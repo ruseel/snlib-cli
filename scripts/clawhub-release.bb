@@ -9,7 +9,7 @@
   (-> *file* fs/path fs/parent fs/parent fs/normalize))
 
 (def skill-source
-  (fs/path repo-root "skills" "snlib-cli"))
+  (fs/path repo-root "impl" "skills" "snlib-cli"))
 
 (def references-dir
   (fs/path skill-source "references"))
@@ -22,15 +22,15 @@
 (defn usage
   []
   (println "Usage:")
-  (println "  scripts/clawhub-release.bb prepare")
+  (println "  scripts/clawhub-release.bb prepare --version VERSION")
   (println "  scripts/clawhub-release.bb publish --version VERSION [--slug SLUG] [--name NAME] [--tags TAGS] [--changelog TEXT]")
   (println)
   (println "Commands:")
-  (println "  prepare   Generate skills/snlib-cli/references/*.md from clj/src/snlib/*.edn.")
-  (println "  publish   Run prepare, then execute clawhub publish against skills/snlib-cli.")
+  (println "  prepare   Pin an existing GitHub release and generate skill references.")
+  (println "  publish   Run prepare, then execute clawhub publish against impl/skills/snlib-cli.")
   (println)
   (println "Options:")
-  (println "  --version VERSION  Required for publish")
+  (println "  --version VERSION  Required; existing GitHub release vVERSION (semver)")
   (println "  --slug SLUG        Skill slug (default: snlib-cli)")
   (println "  --name NAME        Display name (default: snlib-cli)")
   (println "  --tags TAGS        Comma-separated tags (default: latest)")
@@ -97,12 +97,55 @@
   []
   (fs/create-dirs references-dir)
   (spit (str (fs/path references-dir "lib-code.md"))
-        (generated-reference "clj/src/snlib/lib-code.edn"))
+        (generated-reference "impl/clj/src/snlib/lib-code.edn"))
   (spit (str (fs/path references-dir "manage-code.md"))
-        (generated-reference "clj/src/snlib/manage-code.edn")))
+        (generated-reference "impl/clj/src/snlib/manage-code.edn")))
+
+(def native-assets
+  #{"snlib-cli-darwin-arm64" "snlib-cli-darwin-amd64"
+    "snlib-cli-linux-arm64" "snlib-cli-linux-amd64"})
+
+(defn pin-native-release!
+  [version]
+  (when-not (and version
+                (re-matches #"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?" version))
+    (fail "--version must be a semver such as 0.1.0 (without the v prefix)"))
+  (let [tag (str "v" version)
+        repository "ruseel/snlib-cli"
+        directory (fs/create-temp-dir {:prefix "snlib-release-"})
+        manifest (fs/path references-dir "native-release.txt")]
+    (try
+      (let [draft (-> (p/shell {:out :string :err :inherit}
+                              "gh" "release" "view" tag "--repo" repository
+                              "--json" "isDraft" "--jq" ".isDraft")
+                      :out str/trim)]
+        (when-not (= "false" draft)
+          (fail "GitHub release must be published, not a draft")))
+      (p/shell {:out :inherit :err :inherit}
+               "gh" "release" "download" tag "--repo" repository
+               "--pattern" "SHA256SUMS" "--dir" (str directory))
+      (let [body (slurp (str (fs/path directory "SHA256SUMS")))
+            rows (->> (str/split-lines body)
+                      (remove str/blank?)
+                      (mapv #(str/split (str/trim %) #"\s+")))]
+        (when-not (and (= 4 (count rows))
+                       (= native-assets (set (map second rows)))
+                       (every? #(and (= 2 (count %))
+                                     (re-matches #"[0-9a-f]{64}" (first %)))
+                               rows))
+          (fail "SHA256SUMS must contain exactly the four supported native assets"))
+        (fs/create-dirs references-dir)
+        (spit (str manifest)
+              (str tag "\n"
+                   (str/join "\n" (map #(str/join "  " %) (sort-by second rows)))
+                   "\n")))
+      (finally
+        (fs/delete-tree directory)))))
 
 (defn prepare!
-  [_opts]
+  [opts]
+  ;; Fail before publishing if no complete, public native release is available.
+  (pin-native-release! (:version opts))
   (write-generated-references!)
   (println (str "Prepared ClawHub references in " references-dir))
   skill-source)
@@ -132,7 +175,7 @@
                      "--slug" slug
                      "--name" name
                      "--version" version]
-              (seq tag-values) (into (mapcat (fn [tag] ["--tags" tag]) tag-values))
+              (seq tag-values) (into ["--tags" (str/join "," tag-values)])
               (:changelog opts) (into ["--changelog" (:changelog opts)]))]
     (println (str "Running: " (str/join " " cmd)))
     (run-command! cmd)))

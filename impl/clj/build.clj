@@ -205,8 +205,8 @@
 
 (defn- existing-doc-files
   []
-  (->> ["../README.md" "../LICENSE" "../LICENSE.md" "../LICENSE.txt"
-        "../NOTICE" "../NOTICE.md" "../NOTICE.txt"]
+  (->> ["../../README.md" "../../LICENSE" "../../LICENSE.md" "../../LICENSE.txt"
+        "../../NOTICE" "../../NOTICE.md" "../../NOTICE.txt"]
        (map io/file)
        (filter #(.exists ^File %))
        vec))

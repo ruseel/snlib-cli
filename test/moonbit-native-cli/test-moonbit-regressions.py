@@ -9,15 +9,15 @@ import tempfile
 import time
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
-BINARY = ROOT / "moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
+ROOT = Path(__file__).resolve().parents[2]
+BINARY = ROOT / "impl/moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
 
 
 class NativeCliTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         subprocess.run(
-            ["moon", "-C", str(ROOT / "moonbit"), "build", "--target", "native"],
+            ["moon", "-C", str(ROOT / "impl/moonbit"), "build", "--target", "native"],
             check=True,
         )
 

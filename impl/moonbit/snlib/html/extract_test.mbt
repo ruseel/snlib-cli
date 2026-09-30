@@ -1,11 +1,11 @@
 ///|
 fn fixture(path : String) -> String raise {
-  @fs.read_file_to_string("../fixtures/snlib/\{path}")
+  @fs.read_file_to_string("../../fixtures/snlib/\{path}")
 }
 
 ///|
 fn contract(path : String) -> String raise {
-  @fs.read_file_to_string("../fixtures/snlib/contracts/\{path}")
+  @fs.read_file_to_string("../../fixtures/snlib/contracts/\{path}")
 }
 
 ///|
