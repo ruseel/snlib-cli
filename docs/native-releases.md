@@ -12,20 +12,20 @@ Each tag `vVERSION` (for example `v0.1.0`) produces:
 | Asset | GitHub runner / baseline |
 | --- | --- |
 | `snlib-cli-darwin-arm64` | macOS 15, ARM64 |
-| `snlib-cli-darwin-amd64` | macOS 15, x86-64 |
 | `snlib-cli-linux-amd64` | Ubuntu 22.04, glibc, x86-64 |
 | `snlib-cli-linux-arm64` | Ubuntu 24.04, glibc, ARM64 |
-| `SHA256SUMS` | SHA-256 and filename for all four binaries |
+| `SHA256SUMS` | SHA-256 and filename for all three binaries |
 
 Binaries are dynamically linked to system libraries, including libcurl.
 Install the libcurl runtime on Linux (`libcurl4` / `libcurl4t64`, depending
-on distribution). Windows, Alpine/musl, and older OS/runtime versions are not
+on distribution). Intel macOS (unsupported by the current MoonBit toolchain), Windows,
+Alpine/musl, and older OS/runtime versions are not
 supported by these builds. Do not assume that one host-native binary works
 across platforms.
 
 ## Publish a GitHub release
 
-Pushes to `moonbit` and `main` run the same four-platform build validation
+Pushes to `moonbit` and `main` run the same three-platform build validation
 without publishing. Only a `v*` tag enables the release-publishing job.
 
 1. Commit and push the implementation, tests, and
@@ -40,7 +40,7 @@ without publishing. Only a `v*` tag enables the release-publishing job.
 3. Watch the **Native release** workflow. It installs MoonBit and native build
    dependencies on each runner, runs offline tests, builds the native CLI,
    and packages the already-built executable.
-4. Only after all four builds succeed does the workflow create a draft
+4. Only after all three builds succeed does the workflow create a draft
    GitHub Release, upload the binaries and `SHA256SUMS`, and publish it.
 
 The workflow uses the official MoonBit installer and records `moon version`
@@ -63,7 +63,7 @@ bash scripts/package-native.sh
 This copies the host-native executable into `target/native-release/` with a
 platform-specific filename and a `.sha256` sidecar. The packaging script itself
 does not build anything. Local packaging is useful for inspection; the normal
-GitHub release workflow provides the complete four-platform release.
+GitHub release workflow provides the complete three-platform release.
 
 ## Prepare and publish the skill
 
@@ -78,7 +78,7 @@ bb scripts/clawhub-release.bb publish --version 0.1.0 \
 ```
 
 `prepare` fetches `SHA256SUMS` from the existing public release. It requires
-exactly the four supported asset entries and writes a pinned tag plus their
+exactly the three supported asset entries and writes a pinned tag plus their
 checksums to `impl/skills/snlib-cli/references/native-release.txt`. It also
 generates the library-code references. `publish` runs this preparation again
 and uploads the text-only skill bundle to ClawHub. It does not create the

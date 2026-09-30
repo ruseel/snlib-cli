@@ -31,6 +31,7 @@ case "$(uname -m)" in
   x86_64|amd64) arch=amd64 ;;
   *) fail 'Supported architectures: ARM64 and x86-64.' ;;
 esac
+[[ "$os-$arch" != "darwin-amd64" ]] || fail 'Intel macOS is not supported by the current MoonBit toolchain.'
 asset="snlib-cli-$os-$arch"
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 manifest="$script_dir/../references/native-release.txt"

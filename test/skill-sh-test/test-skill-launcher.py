@@ -139,7 +139,6 @@ class LauncherTest(unittest.TestCase):
 
     def test_platform_mapping(self):
         for system, arch, asset in (("Darwin", "arm64", "snlib-cli-darwin-arm64"),
-                                    ("Darwin", "x86_64", "snlib-cli-darwin-amd64"),
                                     ("Linux", "aarch64", "snlib-cli-linux-arm64")):
             with self.subTest(system=system, arch=arch):
                 self.env.update(TEST_OS=system, TEST_ARCH=arch)
@@ -149,6 +148,8 @@ class LauncherTest(unittest.TestCase):
                 self.assertIn(asset, self.log.read_text())
 
     def test_unsupported_platform_never_downloads(self):
+        self.env.update(TEST_OS="Darwin", TEST_ARCH="x86_64")
+        self.assertIn("Intel macOS is not supported", self.run_launcher().stderr)
         self.env["TEST_OS"] = "Windows"
         self.assertIn("Supported platforms", self.run_launcher().stderr)
         self.env.update(TEST_OS="Linux", TEST_ARCH="i686")

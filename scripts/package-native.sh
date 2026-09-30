@@ -12,6 +12,7 @@ case "$(uname -m)" in
   x86_64|amd64) arch=amd64 ;;
   *) echo "Unsupported architecture" >&2; exit 1 ;;
 esac
+[[ "$os-$arch" != "darwin-amd64" ]] || { echo "Intel macOS is unsupported" >&2; exit 1; }
 binary="$repo_root/impl/moonbit/_build/native/debug/build/cmd/snlib-cli/snlib-cli.exe"
 if [[ ! -x "$binary" ]]; then
   echo "Build first: moon -C impl/moonbit build --target native" >&2

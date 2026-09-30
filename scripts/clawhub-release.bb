@@ -102,8 +102,7 @@
         (generated-reference "impl/clj/src/snlib/manage-code.edn")))
 
 (def native-assets
-  #{"snlib-cli-darwin-arm64" "snlib-cli-darwin-amd64"
-    "snlib-cli-linux-arm64" "snlib-cli-linux-amd64"})
+  #{"snlib-cli-darwin-arm64" "snlib-cli-linux-arm64" "snlib-cli-linux-amd64"})
 
 (defn pin-native-release!
   [version]
@@ -128,12 +127,12 @@
             rows (->> (str/split-lines body)
                       (remove str/blank?)
                       (mapv #(str/split (str/trim %) #"\s+")))]
-        (when-not (and (= 4 (count rows))
+        (when-not (and (= 3 (count rows))
                        (= native-assets (set (map second rows)))
                        (every? #(and (= 2 (count %))
                                      (re-matches #"[0-9a-f]{64}" (first %)))
                                rows))
-          (fail "SHA256SUMS must contain exactly the four supported native assets"))
+          (fail "SHA256SUMS must contain exactly the three supported native assets"))
         (fs/create-dirs references-dir)
         (spit (str manifest)
               (str tag "\n"

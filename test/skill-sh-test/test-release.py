@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-ASSETS = ["snlib-cli-darwin-amd64", "snlib-cli-darwin-arm64",
+ASSETS = ["snlib-cli-darwin-arm64",
           "snlib-cli-linux-amd64", "snlib-cli-linux-arm64"]
 
 

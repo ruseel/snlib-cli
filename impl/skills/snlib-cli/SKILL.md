@@ -17,9 +17,10 @@ compiler, or source checkout is needed. The native executable uses the system
 libcurl runtime (on Debian/Ubuntu, install `libcurl4` or `libcurl4t64` as
 appropriate for your distribution).
 
-Supported release assets: macOS ARM64/x86-64 and glibc Linux ARM64/x86-64.
+Supported release assets: macOS ARM64 and glibc Linux ARM64/x86-64.
 Linux x86-64 builds target Ubuntu 22.04; ARM64 builds target Ubuntu 24.04.
-Alpine/musl, Windows, and older runtime libraries are not supported.
+Intel macOS (unsupported by the current MoonBit toolchain), Alpine/musl,
+Windows, and older runtime libraries are not supported.
 
 On first use, the launcher downloads the matching prebuilt binary from
 `https://github.com/ruseel/snlib-cli/releases/download/<pinned-tag>/`.
