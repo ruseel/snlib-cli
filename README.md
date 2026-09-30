@@ -1,125 +1,122 @@
 # snlib-cli
 
-CLI for Seongnam Library (`snlib.go.kr`). 
+An skill for [Seongnam Library (성남시 도서관)](https://snlib.go.kr).
+Search books, check your loans and reservations, and request interlibrary loans
+or new books through your AI assistant.
 
-## Repository layout
+## Install
 
-- `clj/` contains the existing, functional Clojure implementation and build.
-- `moonbit/` contains the native-target MoonBit implementation. It provides the
-  pure typed model, JSON CLI shell, local session preflight, fixture-backed HTML
-  extraction, and live `search-books`, `login`, and `my-info` execution through
-  a native libcurl HTTP adapter with persistent, origin-bound session cookies.
-- `fixtures/` contains language-neutral HTML fixtures. The JSON manifests in
-  `fixtures/snlib/contracts/` describe each fixture flow's input, ordered
-  responses, and observed output facts.
-- `skills/snlib-cli/` contains the published ClawHub skill bundle.
-
-Run Clojure commands from the Clojure project directory:
+Install [snlib-cli from ClawHub](https://clawhub.ai/ruseel/snlib-cli) in your
+skill-enabled assistant. With the ClawHub CLI:
 
 ```bash
-cd clj
-clojure -M:test
-clojure -M -m snlib.cli --help
-clojure -T:build jar :version '"0.1.0"'
+clawhub install snlib-cli
 ```
 
-The native MoonBit build requires a C compiler and libcurl headers/library.
-On macOS, install the Xcode Command Line Tools (`xcode-select --install`); the
-system SDK supplies libcurl. On Debian/Ubuntu, install `build-essential` and
-`libcurl4-openssl-dev`. Native executables consuming `snlib/http_session` must
-link with `-lcurl` (configured in `cmd/snlib-cli/moon.pkg`).
+The skill downloads the appropriate native CLI on first use, verifies its
+checksum, and caches it. You do not need build tools or this repository to use.
 
-With the MoonBit CLI installed, initialize a fresh registry once with
-`moon -C moonbit update`, then validate the pinned dependencies and project
-using `moon -C moonbit check`, `moon -C moonbit test`, and
-`moon -C moonbit build`.
-The first positional argument selects a command and stdin supplies exactly one
-JSON object. For example:
+### Requirements
+
+- macOS on Apple Silicon, or glibc Linux on x86-64/ARM64.
+- Bash, curl, and either `sha256sum` or `shasum`.
+- The system libcurl runtime. On Debian/Ubuntu, install `libcurl4` or
+  `libcurl4t64`, as appropriate for your distribution.
+- Network access to GitHub for the first download and to `snlib.go.kr` for
+  library operations.
+
+Linux builds target Ubuntu 22.04 (x86-64) and Ubuntu 24.04 (ARM64).
+Intel Macs, Windows, and Alpine/musl are not supported by the prebuilt binaries.
+
+## What you can ask
+
+Public book search does not require login. For example:
+
+- “판교도서관에서 제2차 세계대전 관련 책을 찾아줘.”
+- “이 책을 소장한 성남시 도서관을 찾아줘.”
+
+After logging in, you can ask:
+
+- “내 대출 현황과 반납 기한을 알려줘.”
+- “내 대출 이력과 예약 현황을 확인해줘.”
+- “관심 도서함을 보여줘.”
+- “상호대차 신청 현황을 확인해줘.”
+- “희망도서 신청 내역과 상세 내용을 알려줘.”
+- “이 책을 상호대차로 신청할 수 있도록 준비해줘.”
+- “이 책의 희망도서 신청을 준비해줘.”
+
+The skill prepares requests first. Your assistant should show you the book,
+receiving library, and any contact or consent information, then ask for your
+explicit confirmation before submitting.
+
+## Log in safely
+
+Account features require your Seongnam Library credentials. Instead of putting
+your password in chat, shell history, or command arguments, create a private
+JSON file outside this repository:
+
+```json
+{"user_id":"YOUR_ID","password":"YOUR_PASSWORD"}
+```
+
+Restrict access to the file:
 
 ```bash
-printf '%s\n' '{"keyword":"moonbit"}' |
-  moon -C moonbit run cmd/snlib-cli -- search-books
+chmod 600 /path/to/private-login.json
 ```
 
-Every invocation emits one typed JSON result envelope. `search-books` queries
-`https://snlib.go.kr` without login and returns structured JSON with `items`,
-`page`, and `total_count`. Optional JSON fields include `manage_codes` (an array
-of codes), `page`, `per_page`, `sort`, and `order`.
-
-The HTTP adapter verifies TLS certificates, follows at most five redirects
-(without downgrading HTTPS to HTTP), decompresses responses, and limits decoded
-bodies to 8 MiB. Connection and total request timeouts are 10 and 30 seconds.
-Network/TLS failures, non-2xx HTTP responses, and invalid catalogue HTML retain
-separate error codes: `http-request-failed`, `search-request-failed`, and
-`search-response-parse-failed`.
-
-Set `SNLIB_BASE_URL` to override the server for local testing. Offline integration
-tests build the native CLI and exercise it against a temporary local HTTP server:
+Tell your assistant to use that file for login, or run the launcher from the
+installed skill directory:
 
 ```bash
-python3 scripts/test-moonbit-http.py
+scripts/snlib-cli.sh login < /path/to/private-login.json
 ```
 
-These tests require Python 3; OpenSSL enables the untrusted-certificate test.
-They do not access the live service or your saved credentials/session.
+Delete the file when no longer needed. The CLI does not save your password.
+It saves session cookies with owner-only permissions under
+`$XDG_CONFIG_HOME/snlib-cli` (default `~/.config/snlib-cli`). Sessions expire
+after three hours, or sooner if the library rejects them; log in again when
+asked.
 
-### MoonBit login and account information
+Account results and prepared requests can contain personal information.
+Avoid sharing them in public chats or logs.
 
-`login` accepts `{"user_id":"YOUR_ID","password":"YOUR_PASSWORD"}` on stdin.
-It fetches the login page, submits the form, then independently verifies login
-using the loan-status page. An HTTP 200 without an authenticated-page marker
-is not considered success. Login POST redirects are not followed, so passwords
-are never replayed to a redirect destination. Login requires HTTPS except for
-literal loopback test servers (`localhost` / `127.0.0.1`).
+## Run commands directly
 
-For example, in Nushell, read a private JSON file rather than putting your
-password in shell history or process arguments:
+From the installed skill directory:
 
-```nu
-open --raw /path/to/private-login.json | ^moon -C moonbit run cmd/snlib-cli -- login
-'{}' | ^moon -C moonbit run cmd/snlib-cli -- my-info
+```bash
+scripts/snlib-cli.sh --help
+
+# Search without logging in.
+printf '%s\n' '{"keyword":"삼국지"}' | scripts/snlib-cli.sh search-books
+
+# Check loans after logging in.
+printf '%s\n' '{}' | scripts/snlib-cli.sh loan-status
 ```
 
-Keep that input file outside the repository with owner-only permissions (`0600`)
-and remove it when no longer needed. The CLI does **not** save the password.
-On successful login it atomically writes `session.json` with permissions `0600`
-under `$XDG_CONFIG_HOME/snlib-cli` (or `~/.config/snlib-cli`). Session format v2
-contains the patron ID, login time, server base URL, and libcurl cookie records.
-Cookies are reused across processes, honoring domain, path, expiry and Secure
-attributes. They are never included in CLI output or sent by public search.
+Commands take exactly one JSON object on stdin and return a JSON result.
+Check `outcome`, `code`, and `message`: a successful process exit alone does not
+mean the library operation succeeded.
 
-Sessions expire locally after three hours. `my-info` also detects server-side
-expiry/rejection and invalidates the saved cookie session. Refreshed cookies
-are persisted without extending the original three-hour limit. Failed remote
-logins invalidate the previous session; malformed login input leaves it alone.
-Old metadata-only MoonBit sessions and legacy Clojure EDN sessions cannot
-supply these cookies: log in once with the native CLI. Changing `SNLIB_BASE_URL`
-also requires a new login; cookies from another server are never reused.
+For command inputs and available workflows, see the
+[skill guide](impl/skills/snlib-cli/SKILL.md) and
+[command reference](docs/moonbit-commands.md).
 
-`my-info` returns `user_id`, `member_no`, `member_type`, `join_date`,
-`privacy_expiry_date`, `phone`, and `email`; absent optional fields are `null`.
-The result is personal data, so avoid storing its output in shared logs.
-Authentication rejection uses `login-rejected` / `session-rejected`;
-missing/expired sessions use `session-missing` / `session-expired`;
-an origin mismatch uses `session-origin-mismatch`. HTTP, parse, and persistence
-failures use distinct remote-error codes, including `session-save-failed`.
+## Troubleshooting
 
-Other account queries and request submission still return `not-implemented`
-after session preflight. No live account credentials are needed for the offline
-test suite: the account fixture and HTTP server use entirely fictional data.
+- **Session missing, expired, or rejected:** log in again using your private file.
+- **Download failed:** check access to GitHub and retry.
+- **Checksum mismatch:** do not run the downloaded file. Reinstall the trusted
+  skill or remove the corrupted cached binary and retry.
+- **Unsupported platform or missing runtime library:** check the requirements
+  above; the skill does not build a binary on your machine.
+- **Library request failed:** do not assume it succeeded. The service may be
+  unavailable or its pages may have changed.
+- **Submission error:** check your interlibrary-loan or hope-book request status
+  before retrying. The library may have accepted the request even if the CLI
+  could not confirm it.
 
-The pure `snlib/model` package imports nothing. Adapters depend inward on the
-model/remote boundaries, application composes those ports, the `snlib` facade
-depends on application and model, and `snlib/cli` renders typed results as JSON.
-`cmd/snlib-cli` wires process IO and the native HTTP adapter to that shell. Dependency versions are
-pinned in `moonbit/moon.mod`.
-
-- Account/session (계정/세션): `login`, `my-info` (내 정보 조회)
-- Discovery (도서 탐색): `search-books`, `basket` (관심 도서함)
-- Status checks (현황 조회): `loan-status` (대출 현황), `interloan-status` (상호대차 현황), `hope-book-list`/`hope-book-detail` (희망도서 신청 내역/상세)
-- Write: `interloan-request` (상호대차 신청), `hope-book-request` (희망도서 신청, `--request-edn` 단일 EDN 맵 사용)
-
-The ClawHub skill bundle lives under `skills/snlib-cli` and is deployed to
-https://clawhub.ai/ruseel/snlib-cli.
-  
-See also: `skills/snlib-cli/SKILL.md`
+Requests are preparation-only by default. Submission requires explicit
+confirmation; never automatically retry a submission after a network or
+session-save error.

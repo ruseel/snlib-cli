@@ -1,0 +1,56 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/html"
+
+import {
+  "ruseel/snlib-cli/snlib/model",
+}
+
+// Values
+pub fn authenticated_page(String) -> Bool
+
+pub fn classify_submission(String) -> @model.SubmissionEvidence
+
+pub fn extract_basket_books(String) -> Array[@model.BasketBook] raise @model.ExtractionError
+
+pub fn extract_basket_group(String) -> BasketGroup raise @model.ExtractionError
+
+pub fn extract_catalogue(String) -> @model.CatalogueSearch raise @model.ExtractionError
+
+pub fn extract_current_loans(String) -> Array[@model.CurrentLoan]
+
+pub fn extract_hope_book_detail(String) -> @model.HopeBookDetailData raise @model.ExtractionError
+
+pub fn extract_hope_book_list(String) -> @model.HopeBookListData raise @model.ExtractionError
+
+pub fn extract_hope_defaults(String) -> @model.HopeBookDefaults raise @model.ExtractionError
+
+pub fn extract_hope_form(String) -> Map[String, String] raise @model.ExtractionError
+
+pub fn extract_interloan_form(String) -> Map[String, String] raise @model.ExtractionError
+
+pub fn extract_interloan_preparation(String) -> @model.InterloanPreparation raise @model.ExtractionError
+
+pub fn extract_interloan_status(String) -> @model.InterloanStatusData raise @model.ExtractionError
+
+pub fn extract_loan_history(String) -> @model.LoanHistoryData raise @model.ExtractionError
+
+pub fn extract_loan_status(String, Bool) -> @model.LoanStatusData raise @model.ExtractionError
+
+pub fn extract_my_info(String) -> @model.MyInfoData raise @model.ExtractionError
+
+pub fn extract_reservations(String) -> @model.ReservationData raise @model.ExtractionError
+
+pub fn logged_out(String) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct BasketGroup {
+  key : String?
+  name : String?
+  count : Int?
+}
+
+// Type aliases
+
+// Traits

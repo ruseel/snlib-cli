@@ -1,0 +1,321 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ruseel/snlib-cli/snlib/model"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn command_result(Outcome, String, String, data? : CommandData) -> CommandResult
+
+pub fn interloan_request_input(String, String, String, give_lib_code? : String, user_key? : String, appendix_apply_yn? : String, submit? : Bool) -> InterloanRequestInput
+
+pub fn library_code(String) -> String raise CodeError
+
+pub fn loan_status_input(include_history? : Bool) -> LoanStatusInput
+
+pub fn manage_code(String) -> String raise CodeError
+
+pub fn normalize_library_code(String) -> String
+
+pub fn normalize_manage_code(String) -> String
+
+pub fn search_books_input(String, manage_codes? : Array[String], page? : Int, per_page? : Int, sort? : String, order? : String) -> SearchBooksInput
+
+pub let session_duration_ms : UInt64
+
+pub fn valid_library_code(String) -> Bool
+
+pub fn valid_manage_code(String) -> Bool
+
+// Errors
+pub(all) suberror CodeError {
+  InvalidManageCode(String)
+  InvalidLibraryCode(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExtractionError {
+  InvalidHtml(String)
+  MissingField(String)
+  SubmitFailed(String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct BasketBook {
+  title : String
+  author : String
+  publisher : String
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct BasketData {
+  group_key : String?
+  group_name : String?
+  book_count : Int?
+  books : Array[BasketBook]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct BasketListInput {
+  group_key : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CatalogueBook {
+  title : String
+  author : String
+  publisher : String
+  publication_year : String
+  manage_code : String
+  registration_number : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CatalogueSearch {
+  total_count : Int
+  items : Array[CatalogueBook]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CommandData {
+  SearchBooksResult(SearchBooksData)
+  LoginResult(LoginData)
+  MyInfoResult(MyInfoData)
+  LoanStatusResult(LoanStatusData)
+  LoanHistoryResult(LoanHistoryData)
+  ReservationResult(ReservationData)
+  InterloanStatusResult(InterloanStatusData)
+  HopeBookListResult(HopeBookListData)
+  HopeBookDetailResult(HopeBookDetailData)
+  BasketResult(BasketData)
+  SubmissionResult(SubmissionData)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CommandInput {
+  Login(LoginInput)
+  SearchBooks(SearchBooksInput)
+  LoanStatus(LoanStatusInput)
+  HopeBookRequest(HopeBookRequestInput)
+  InterloanRequest(InterloanRequestInput)
+  MyInfo
+  LoanHistory
+  ReservationStatus
+  InterloanStatus
+  HopeBookList
+  HopeBookDetail(HopeBookDetailInput)
+  BasketList(BasketListInput)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CommandResult {
+  outcome : Outcome
+  code : String
+  message : String
+  data : CommandData?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CurrentLoan {
+  title : String
+  loan_date_text : String
+  due_date_text : String
+  return_status_text : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct HopeBookDefaults {
+  email : String
+  mobile_no_1 : String
+  mobile_no_2 : String
+  mobile_no_3 : String
+  phone : String
+  fields : Map[String, String]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct HopeBookDetailData {
+  applicant : String?
+  phone : String?
+  email : String?
+  library : String?
+  title : String?
+  author : String?
+  publisher : String?
+  publish_year : String?
+  isbn : String?
+  price : String?
+  apply_date : String?
+  status : String?
+  opinion : String?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct HopeBookDetailInput {
+  rec_key : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct HopeBookItem {
+  title : String
+  library : String
+  apply_date : String
+  status : String
+  rec_key : String
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct HopeBookListData {
+  items : Array[HopeBookItem]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct HopeBookRequestInput {
+  manage_code : String?
+  request : Map[String, String]
+  submit : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InterloanPreparation {
+  manage_code : String
+  registration_number : String
+  providing_library_code : String
+  appendix_apply : String
+  user_key : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InterloanRequestInput {
+  manage_code : String
+  reg_no : String
+  apl_lib_code : String
+  give_lib_code : String?
+  user_key : String?
+  appendix_apply_yn : String
+  submit : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InterloanStatusData {
+  requests : Array[InterloanStatusItem]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct InterloanStatusItem {
+  title : String
+  reg_no : String
+  call_no : String
+  give_library : String
+  apl_library : String
+  status : String
+  apply_date : String
+  applicant : String
+  cancel_key : String
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LoanHistoryData {
+  loans : Array[LoanHistoryItem]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LoanHistoryItem {
+  title : String
+  reg_no : String
+  call_no : String
+  library : String
+  room : String
+  return_status : String
+  loan_date : String
+  return_date : String
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LoanItem {
+  title : String
+  loan_date : String
+  due_date : String
+  return_status : String
+  renewable : Bool?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LoanStatusData {
+  loans : Array[LoanItem]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LoanStatusInput {
+  include_history : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LoginData {
+  authenticated : Bool
+  user_id : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LoginInput {
+  user_id : String
+  password : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MyInfoData {
+  user_id : String
+  member_no : String?
+  member_type : String?
+  join_date : String?
+  privacy_expiry_date : String?
+  phone : String?
+  email : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Outcome {
+  Ok
+  InvalidInput
+  RequiresLogin
+  NotImplemented
+  Blocked
+  RemoteError
+  SubmitFailed
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ReservationData {
+  reservations : Array[ReservationItem]
+  count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct ReservationItem {
+  title : String
+  reg_no : String
+  reservation_date : String
+  reservation_expiry : String
+  status : String
+  library : String
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct SearchBooksData {
+  items : Array[CatalogueBook]
+  page : Int
+  total_count : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SearchBooksInput {
+  keyword : String
+  manage_codes : Array[String]
+  page : Int
+  per_page : Int
+  sort : String
+  order : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Session {
+  patron_id : String
+  authenticated_at_ms : UInt64
+  remembered : Bool
+  status : SessionStatus
+} derive(Eq, @debug.Debug)
+pub fn Session::is_usable(Self, UInt64) -> Bool
+
+pub(all) enum SessionStatus {
+  Active
+  Expired
+  Rejected
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SubmissionData {
+  prepared_payload : Map[String, String]
+  submit_attempted : Bool
+  result_message : String?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) enum SubmissionEvidence {
+  Submitted(String)
+  SubmitFailed(String)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
