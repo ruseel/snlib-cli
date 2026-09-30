@@ -7,6 +7,7 @@ pub let search_path : String = "/intro/menu/10041/program/30009/plusSearchResult
 ///|
 pub(all) enum HttpMethod {
   Get
+  Post(Map[String, String])
 } derive(Eq, Debug)
 
 ///|

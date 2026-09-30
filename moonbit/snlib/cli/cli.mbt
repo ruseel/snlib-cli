@@ -74,8 +74,31 @@ fn catalogue_book_json(book : @model.CatalogueBook) -> Json {
 }
 
 ///|
+fn optional_string_json(value : String?) -> Json {
+  match value {
+    Some(text) => Json::string(text)
+    None => Json::null()
+  }
+}
+
+///|
 fn command_data_json(data : @model.CommandData) -> Json {
   match data {
+    LoginResult(login) =>
+      Json::object({
+        "authenticated": Json::boolean(login.authenticated),
+        "user_id": Json::string(login.user_id),
+      })
+    MyInfoResult(info) =>
+      Json::object({
+        "user_id": Json::string(info.user_id),
+        "member_no": optional_string_json(info.member_no),
+        "member_type": optional_string_json(info.member_type),
+        "join_date": optional_string_json(info.join_date),
+        "privacy_expiry_date": optional_string_json(info.privacy_expiry_date),
+        "phone": optional_string_json(info.phone),
+        "email": optional_string_json(info.email),
+      })
     SearchBooksResult(search) =>
       Json::object({
         "items": Json::array(search.items.map(catalogue_book_json)),
@@ -162,14 +185,15 @@ fn validate_input(command : String, json : Json) -> @model.CommandInput? {
   match command {
     "login" =>
       match (decode(json) : LoginWire?) {
-        Some({ user_id: Some(user_id), password: Some(password), }) =>
-          Some(@model.Login({ user_id, password, }))
+        Some({ user_id: Some(user_id), password: Some(password) }) if user_id.trim() !=
+          "" &&
+          password.trim() != "" => Some(@model.Login({ user_id, password }))
         _ => None
       }
     "search-books" =>
       match (decode(json) : SearchWire?) {
         Some(
-          { keyword: Some(keyword), manage_codes, page, per_page, sort, order, }
+          { keyword: Some(keyword), manage_codes, page, per_page, sort, order }
         ) => {
           guard keyword.trim() != "" else { None }
           let codes = manage_codes.unwrap_or([])
@@ -251,13 +275,13 @@ fn validate_input(command : String, json : Json) -> @model.CommandInput? {
     "hope-book-list" => Some(@model.HopeBookList)
     "hope-book-detail" =>
       match (decode(json) : DetailWire?) {
-        Some({ rec_key: Some(rec_key), }) =>
+        Some({ rec_key: Some(rec_key) }) =>
           Some(@model.HopeBookDetail({ rec_key, }))
         _ => None
       }
     "basket-list" =>
       (decode(json) : BasketWire?).map(wire => {
-        @model.BasketList({ group_key: wire.group_key, })
+        @model.BasketList({ group_key: wire.group_key })
       })
     _ => None
   }
@@ -314,6 +338,8 @@ fn run_internal(
   match (command_input, transport) {
     (SearchBooks(search), Some(send)) =>
       return @application.search_books(search, send)
+    (Login(login), Some(send)) => return @application.login(login, send)
+    (MyInfo, Some(send)) => return @application.my_info(send)
     _ => ()
   }
   @model.command_result(

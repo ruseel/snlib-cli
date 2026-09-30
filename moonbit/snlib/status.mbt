@@ -1,5 +1,5 @@
 ///|
-/// Describes the Stage 0 implementation status.
+/// Describes the native implementation status.
 pub fn implementation_status() -> String {
-  "MoonBit snlib-cli foundation is ready; commands are not implemented."
+  "MoonBit snlib-cli supports live catalogue search, login, and account information; other remote commands are not implemented."
 }

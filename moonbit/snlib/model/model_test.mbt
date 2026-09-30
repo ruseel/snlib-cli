@@ -15,6 +15,20 @@ test "library codes are syntactic six-digit values" {
 }
 
 ///|
+test "sessions reject future timestamps and expire at exactly three hours" {
+  let session : @model.Session = {
+    patron_id: "reader",
+    authenticated_at_ms: 1000UL,
+    remembered: true,
+    status: Active,
+  }
+  assert_false(session.is_usable(999UL))
+  assert_true(session.is_usable(1000UL))
+  assert_true(session.is_usable(1000UL + @model.session_duration_ms - 1UL))
+  assert_false(session.is_usable(1000UL + @model.session_duration_ms))
+}
+
+///|
 test "command defaults remain stable" {
   let search = @model.search_books_input("moonbit")
   assert_eq(search.page, 1)

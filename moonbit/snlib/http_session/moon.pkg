@@ -1,5 +1,10 @@
 import {
   "ruseel/snlib-cli/snlib/remote",
+  "moonbitlang/core/encoding/utf8",
 }
 
 supported_targets = "native"
+
+options(
+  "native-stub": [ "http_native.c" ],
+)

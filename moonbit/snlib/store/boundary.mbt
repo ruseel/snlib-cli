@@ -97,7 +97,7 @@ pub fn load_session_at(path : String) -> @model.Session? {
     wire => Some(wire)
   }
   guard decoded is Some(wire) &&
-    wire.version == 1 &&
+    (wire.version == 1 || wire.version == 2) &&
     wire.authenticated_at_ms >= 0.0 else {
     return None
   }
@@ -202,7 +202,7 @@ pub fn load_credentials_at(path : String) -> Credentials? {
     wire => Some(wire)
   }
   guard decoded is Some(wire) && wire.version == 1 else { return None }
-  Some({ user_id: wire.user_id, password: wire.password, })
+  Some({ user_id: wire.user_id, password: wire.password })
 }
 
 ///|

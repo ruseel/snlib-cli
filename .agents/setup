@@ -1,7 +1,7 @@
 #!/usr/bin/env nu
 
 ^sudo apt-get update
-^sudo apt-get install -y curl openjdk-17-jre-headless rlwrap
+^sudo apt-get install -y curl build-essential libcurl4-openssl-dev python3 openssl openjdk-17-jre-headless rlwrap
 
 if (which moon | is-empty) {
   # Official installer; keep the release channel explicit for repeatable setup.
